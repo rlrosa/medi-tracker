@@ -45,3 +45,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
+
+export async function POST(request: Request) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const data = await request.json()
+    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt } = data
+    
+    let finalUserId = session.userId
+    if (session.role === 'ADMIN' && administeredByUserId) {
+      finalUserId = administeredByUserId
+    }
+
+    const log = await prisma.administrationLog.create({
+      data: {
+        medicationId,
+        administeredAt: new Date(administeredAt),
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        administeredByUserId: finalUserId,
+        notes: notes || null
+      }
+    })
+
+    return NextResponse.json({ log })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}

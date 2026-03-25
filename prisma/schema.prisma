@@ -39,7 +39,8 @@ model AdministrationLog {
   medicationId         String
   medication           Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   
-  administeredAt       DateTime    @default(now())
+  administeredAt       DateTime
+  scheduledAt          DateTime?
   
   administeredByUserId String?
   administeredByUser   User?       @relation(fields: [administeredByUserId], references: [id], onDelete: SetNull)

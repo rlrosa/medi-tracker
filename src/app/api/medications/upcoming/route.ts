@@ -50,8 +50,9 @@ export async function GET(request: Request) {
       }
 
       if (med.logs.length > 0 && med.intervalHours) {
-        const lastAdmin = new Date(med.logs[0].administeredAt)
-        nextDue = new Date(lastAdmin.getTime() + med.intervalHours * 60 * 60 * 1000)
+        const lastLog = med.logs[0]
+        const baseTime = lastLog.scheduledAt ? new Date(lastLog.scheduledAt) : new Date(lastLog.administeredAt)
+        nextDue = new Date(baseTime.getTime() + med.intervalHours * 60 * 60 * 1000)
       } else {
         // Not administered yet, due at start date or now
         nextDue = med.startDate ? new Date(med.startDate) : now

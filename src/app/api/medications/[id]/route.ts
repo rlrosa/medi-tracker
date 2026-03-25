@@ -40,6 +40,7 @@ export async function PUT(
         alias: data.alias || null,
         imageUrl: data.imageUrl || null,
         intervalHours: data.intervalHours ? parseInt(data.intervalHours, 10) : null,
+        marginMinutes: data.marginMinutes !== undefined ? parseInt(data.marginMinutes, 10) : 30,
         daysOfWeek: data.daysOfWeek || null,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,

@@ -32,7 +32,10 @@ export function Navigation() {
         <Link href="/log" className="btn" style={{ padding: '0.4rem 0.8rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}>Log Past Med</Link>
         
         {user?.role === 'ADMIN' && (
-          <Link href="/add" className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}>+ Add Med</Link>
+          <>
+            <Link href="/medications" className="btn" style={{ padding: '0.4rem 0.8rem', background: 'var(--bg-secondary)', color: 'var(--accent-primary)', fontSize: '0.9rem', border: '1px solid var(--accent-primary)' }}>⚙️ Manage</Link>
+            <Link href="/add" className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}>+ Add Med</Link>
+          </>
         )}
         
         <button 

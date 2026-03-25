@@ -14,6 +14,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState('dark')
   const [muteAudio, setMuteAudioState] = useState(false)
 
+  // Intercept all fetch requests on the client to safely inject the ngrok bypass header
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const originalFetch = window.fetch;
+      window.fetch = async (resource, config = {}) => {
+        config.headers = {
+          ...config.headers,
+          'ngrok-skip-browser-warning': 'any'
+        };
+        return originalFetch(resource, config);
+      };
+      
+      // Better Error Reporting for Next.js HMR WebSocket Failures over Ngrok
+      const originalError = console.error;
+      console.error = (...args) => {
+        if (typeof args[0] === 'string' && args[0].includes('webpack-hmr')) {
+          console.warn('💡 [DEV HINT] Next.js Hot Module Replacement (HMR) WebSocket was blocked. Since you are using Ngrok, you must explicitly whitelist your temporary Ngrok URL in `next.config.ts` under `allowedDevOrigins` to enable live reloading.');
+          return; // Suppress the ugly raw error stack trace to avoid clutter
+        }
+        originalError(...args);
+      };
+    }
+  }, []);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark'
     const savedMute = localStorage.getItem('muteAudio') === 'true'

@@ -23,6 +23,8 @@ export default function Dashboard() {
   
   // Track if we need explicit gesture for Android permissions
   const [needsPermission, setNeedsPermission] = useState(false)
+  
+  const [dbError, setDbError] = useState<string | null>(null)
 
   const fetchData = async () => {
     try {
@@ -31,6 +33,12 @@ export default function Dashboard() {
         fetch('/api/medications/upcoming?hours=24'),
         fetch('/api/logs/recent')
       ])
+      
+      if (!upcomingRes.ok || !recentRes.ok || !meRes.ok) {
+        setDbError('Cannot reach the database. Please check your network connection.')
+      } else {
+        setDbError(null)
+      }
       
       const meData = await meRes.json()
       setUser(meData.user)
@@ -47,6 +55,7 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error(err)
+      setDbError('Network error. Database is unreachable.')
     } finally {
       setLoading(false)
     }
@@ -136,16 +145,31 @@ export default function Dashboard() {
     }
   }
 
-  const handleAdminister = async (medId: string) => {
+  const handleAdminister = async (id: string, notes: string = '', scheduledAt?: string) => {
     if (!user) return alert('Must be logged in')
-    const res = await fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ medicationId: medId, notes: notes[medId] || '' })
-    })
-    if (res.ok) {
-      setNotes(prev => ({ ...prev, [medId]: '' }))
-      fetchData()
+    try {
+      const payload: any = {
+        medicationId: id,
+        administeredAt: new Date().toISOString()
+      };
+      if (scheduledAt) payload.scheduledAt = scheduledAt;
+      if (notes) payload.notes = notes;
+      
+      const res = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setNotes(prev => ({ ...prev, [id]: '' }))
+        fetchData()
+      } else {
+        console.error('Failed to administer medication:', res.status, await res.text());
+        alert('Failed to administer medication.');
+      }
+    } catch (error) {
+      console.error('Error administering medication:', error);
+      alert('An error occurred while administering medication.');
     }
   }
 
@@ -173,6 +197,13 @@ export default function Dashboard() {
           <button onClick={requestPermissions} className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '24px' }}>
             Allow Alerts
           </button>
+        </div>
+      )}
+
+      {dbError && (
+        <div className="glass-panel" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'var(--danger)', marginBottom: '2rem' }}>
+          <h3 style={{ color: 'var(--danger)' }}>⚠️ Connection Error</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>{dbError}</p>
         </div>
       )}
 
@@ -221,17 +252,14 @@ export default function Dashboard() {
                       
                       {user ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end', width: '100%' }}>
-                          <input 
-                            type="text" 
-                            className="input-field" 
-                            placeholder="Optional notes (e.g. dosage amount)" 
-                            value={notes[med.id] || ''}
-                            onChange={e => setNotes({...notes, [med.id]: e.target.value})}
-                            style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem', borderRadius: '16px', maxWidth: '200px' }}
-                            disabled={!isWithinMargin}
-                          />
                           <button 
-                            onClick={() => isWithinMargin && handleAdminister(med.id)} 
+                            onClick={() => {
+                              if (!isWithinMargin) return;
+                              const notes = prompt('Add optional notes (e.g. dosage) or leave blank:')
+                              if (notes !== null) {
+                                handleAdminister(med.id, notes, med.nextDue)
+                              }
+                            }}
                             className={`btn ${isWithinMargin ? 'btn-success' : ''}`} 
                             style={{ 
                               padding: '0.75rem 1.5rem', 
