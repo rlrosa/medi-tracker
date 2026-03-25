@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,8 +24,9 @@ model Medication {
   imageUrl      String?
   
   // Schedule
-  intervalHours Int?      // Every N hours
-  daysOfWeek    String?   // comma separated 0-6 (0=Sunday)
+  intervalHours Int?
+  marginMinutes Int      @default(30)
+  daysOfWeek    String?   // e.g. "1,3,5" for Mon/Wed/Fri
   startDate     DateTime?
   endDate       DateTime?
 

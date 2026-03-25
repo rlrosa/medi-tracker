@@ -19,43 +19,68 @@ export async function GET(request: Request) {
       }
     })
 
-    const upcoming = medications.map(med => {
+    const upcoming: any[] = []
+
+    medications.forEach(med => {
       let nextDue: Date | null = null
 
       // Check dates
       if (med.endDate && med.endDate < now) return null
       if (med.startDate && med.startDate > futureLimit) return null
 
-      // Day of week check (simple simplified check for MVP)
-      const currentDay = now.getDay().toString()
-      if (med.daysOfWeek && !med.daysOfWeek.split(',').includes(currentDay)) {
-        // If not today, we should technically check if it's due tomorrow, 
-        // but for a <24h window, if it's not today's day we can skip.
-        // (This is a simplified assumption)
-        return null
+      // Day of week check
+      const currentDayNumber = now.getDay()
+      if (med.daysOfWeek) {
+        let isIncluded = false
+        const parts = med.daysOfWeek.split(',')
+        for (const p of parts) {
+          const trimmed = p.trim()
+          if (trimmed.includes('-')) {
+            const [start, end] = trimmed.split('-').map(Number)
+            if (currentDayNumber >= start && currentDayNumber <= end) {
+              isIncluded = true
+              break
+            }
+          } else if (Number(trimmed) === currentDayNumber) {
+            isIncluded = true
+            break
+          }
+        }
+        if (!isIncluded) return
       }
 
       if (med.logs.length > 0 && med.intervalHours) {
-        const lastAdmin = med.logs[0].administeredAt
+        const lastAdmin = new Date(med.logs[0].administeredAt)
         nextDue = new Date(lastAdmin.getTime() + med.intervalHours * 60 * 60 * 1000)
       } else {
         // Not administered yet, due at start date or now
-        nextDue = med.startDate && med.startDate > now ? med.startDate : now
-      }
-
-      if (nextDue <= futureLimit) {
-        return {
-          ...med,
-          nextDue,
-          isOverdue: nextDue < now
+        nextDue = med.startDate ? new Date(med.startDate) : now
+        if (nextDue < now) {
+          // If startDate was in the past, and it has interval, it should be overdue by a lot, or we just project it forward
+          // Actually, if it's new and has missed its startDate, we say it's due at that startDate.
         }
       }
 
-      return null
-    }).filter(Boolean)
+      let currentDue = new Date(nextDue)
+      
+      while (currentDue <= futureLimit) {
+        upcoming.push({
+          ...med,
+          nextDue: new Date(currentDue),
+          isOverdue: currentDue < now,
+          instanceId: `${med.id}-${currentDue.getTime()}`
+        })
+        
+        if (med.intervalHours) {
+          currentDue = new Date(currentDue.getTime() + med.intervalHours * 60 * 60 * 1000)
+        } else {
+          break
+        }
+      }
+    })
 
-    // Sort by due date
-    upcoming.sort((a, b) => (a?.nextDue?.getTime() || 0) - (b?.nextDue?.getTime() || 0))
+    // Sort all upcoming doses across all medications by time
+    upcoming.sort((a, b) => a.nextDue.getTime() - b.nextDue.getTime())
 
     return NextResponse.json({ upcoming })
   } catch (error) {

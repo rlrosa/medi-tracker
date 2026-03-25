@@ -1,15 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Navigation } from '@/components/Navigation'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-export default function AddMedication() {
+export default function EditMedication() {
   const router = useRouter()
+  const params = useParams()
+  const medId = params?.id
+  
   const [loading, setLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  
   const [selectedDays, setSelectedDays] = useState<number[]>([])
 
   const [form, setForm] = useState({
@@ -22,6 +24,14 @@ export default function AddMedication() {
     endDate: ''
   })
 
+  // Format a Date object to YYYY-MM-DDThh:mm string for the local input
+  const formatForInput = (isoString: string) => {
+    if (!isoString) return ''
+    const d = new Date(isoString)
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    return d.toISOString().slice(0,16)
+  }
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -30,9 +40,42 @@ export default function AddMedication() {
           router.push('/')
         } else {
           setIsAdmin(true)
+          if (medId) loadMedication()
         }
       })
-  }, [router])
+  }, [medId, router])
+
+  const loadMedication = async () => {
+    const res = await fetch('/api/medications')
+    const data = await res.json()
+    const med = data.medications?.find((m: any) => m.id === medId)
+    if (med) {
+      setForm({
+        name: med.name || '',
+        alias: med.alias || '',
+        imageUrl: med.imageUrl || '',
+        intervalHours: med.intervalHours ? med.intervalHours.toString() : '',
+        marginMinutes: med.marginMinutes ? med.marginMinutes.toString() : '30',
+        startDate: med.startDate ? formatForInput(med.startDate) : '',
+        endDate: med.endDate ? formatForInput(med.endDate) : ''
+      })
+      if (med.daysOfWeek) {
+        // Expand ranges to individual selected day numbers if needed, 
+        // but wait our day picker only created comma separated numbers so far.
+        // If it was created as '0-6', expand it:
+        let parsed: number[] = []
+        med.daysOfWeek.split(',').forEach((p: string) => {
+          if (p.includes('-')) {
+            const [s, e] = p.split('-').map(Number)
+            for (let i = s; i <= e; i++) parsed.push(i)
+          } else {
+            parsed.push(Number(p))
+          }
+        })
+        setSelectedDays([...new Set(parsed)])
+      }
+    }
+  }
 
   const toggleDay = (index: number) => {
     if (selectedDays.includes(index)) {
@@ -42,10 +85,7 @@ export default function AddMedication() {
     }
   }
 
-  const setEveryday = () => {
-    setSelectedDays([0, 1, 2, 3, 4, 5, 6])
-  }
-
+  const setEveryday = () => setSelectedDays([0, 1, 2, 3, 4, 5, 6])
   const clearDays = () => setSelectedDays([])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +93,7 @@ export default function AddMedication() {
     setLoading(true)
     
     // Sort days numerically
-    const daysOfWeekStr = selectedDays.sort((a,b) => a - b).join(',')
+    const daysOfWeekStr = selectedDays.length > 0 ? selectedDays.sort((a,b) => a - b).join(',') : null
 
     const payload = {
       ...form,
@@ -63,8 +103,8 @@ export default function AddMedication() {
       endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
     }
 
-    const res = await fetch('/api/medications', {
-      method: 'POST',
+    const res = await fetch(`/api/medications/${medId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
@@ -75,7 +115,7 @@ export default function AddMedication() {
       router.refresh()
     } else {
       const data = await res.json()
-      alert(data.error || 'Failed to add medication')
+      alert(data.error || 'Failed to update medication')
     }
   }
 
@@ -86,7 +126,7 @@ export default function AddMedication() {
       <Navigation />
       
       <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Add New Medication</h2>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Edit Medication</h2>
         
         <form onSubmit={handleSubmit} className="flex-col" style={{ gap: '1rem' }}>
           <div>
@@ -118,8 +158,8 @@ export default function AddMedication() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label>Days of Week (Optional)</label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" onClick={setEveryday} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>Everyday</button>
-                <button type="button" onClick={clearDays} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>Clear</button>
+                <button type="button" onClick={setEveryday} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)' }}>Everyday</button>
+                <button type="button" onClick={clearDays} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)' }}>Clear</button>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -155,7 +195,7 @@ export default function AddMedication() {
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            {loading ? 'Adding...' : 'Add Medication'}
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </div>

@@ -8,6 +8,7 @@ export default function LogHistoryPage() {
   const [loading, setLoading] = useState(false)
   const [meds, setMeds] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
+  const [usersList, setUsersList] = useState<any[]>([])
   
   const [form, setForm] = useState({
     medicationId: '',
@@ -18,7 +19,12 @@ export default function LogHistoryPage() {
 
   useEffect(() => {
     fetch('/api/medications').then(res => res.json()).then(data => setMeds(data.medications || []))
-    fetch('/api/auth/me').then(res => res.json()).then(data => setUser(data.user))
+    fetch('/api/auth/me').then(res => res.json()).then(data => {
+      setUser(data.user)
+      if (data.user?.role === 'ADMIN') {
+        fetch('/api/users').then(r => r.json()).then(d => setUsersList(d.users || []))
+      }
+    })
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,8 +82,15 @@ export default function LogHistoryPage() {
 
           {user?.role === 'ADMIN' && (
             <div>
-              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Administering User ID (Admin Override)</label>
-              <input type="text" className="input-field" placeholder="Target user ID or leave blank for self" value={form.administeredByUserId} onChange={e => setForm({...form, administeredByUserId: e.target.value})} />
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Administering User (Admin Override)</label>
+              <select className="input-field" value={form.administeredByUserId} onChange={e => setForm({...form, administeredByUserId: e.target.value})}>
+                <option value="">{user.name || user.username} (Self)</option>
+                {usersList.filter(u => u.id !== user.id).map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.username} ({u.role})
+                  </option>
+                ))}
+              </select>
             </div>
           )}
           

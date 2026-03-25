@@ -20,7 +20,9 @@ export async function GET() {
 // Add new medication
 export async function POST(request: Request) {
   const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session || session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 })
+  }
 
   try {
     const data = await request.json()

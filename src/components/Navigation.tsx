@@ -51,8 +51,18 @@ export function Navigation() {
         {/* Auth State */}
         {user ? (
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.9rem' }}>Hello, {user.name}</span>
-            <Link href="/add" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>+ Add Med</Link>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+              Hello, {user.name}
+              {user.role === 'ADMIN' && (
+                <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--accent-primary)', color: 'white', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                  ADMIN
+                </span>
+              )}
+            </span>
+            <Link href="/log" className="btn" style={{ padding: '0.5rem 1rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>Log Past Med</Link>
+            {user.role === 'ADMIN' && (
+              <Link href="/add" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>+ Add Med</Link>
+            )}
             <button onClick={handleLogout} className="btn" style={{ padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.2)', color: 'var(--danger)' }}>Logout</button>
           </div>
         ) : (
