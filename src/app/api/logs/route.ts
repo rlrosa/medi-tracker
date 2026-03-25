@@ -54,18 +54,18 @@ export async function POST(request: Request) {
     const data = await request.json()
     const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt } = data
     
-    let finalUserId = session.userId
-    if (session.role === 'ADMIN' && administeredByUserId) {
+    let finalUserId: string = String(session.userId)
+    if (session.role === 'ADMIN' && typeof administeredByUserId === 'string' && administeredByUserId) {
       finalUserId = administeredByUserId
     }
 
     const log = await prisma.administrationLog.create({
       data: {
-        medicationId,
-        administeredAt: new Date(administeredAt),
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        medicationId: String(medicationId),
+        administeredAt: new Date(String(administeredAt)),
+        scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
-        notes: notes || null
+        notes: typeof notes === 'string' && notes ? notes : null
       }
     })
 
