@@ -2,34 +2,46 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const url = new URL(request.url)
+  const medName = url.searchParams.get('name')
+  const dateStr = url.searchParams.get('date')
+  const userId = url.searchParams.get('user')
+
+  const whereClause: any = {}
+
+  if (medName) {
+    whereClause.medication = { name: { contains: medName, mode: 'insensitive' } }
+  }
+  
+  if (userId) {
+    whereClause.administeredByUserId = userId
+  }
+
+  if (dateStr) {
+    // dateStr in YYYY-MM-DD format
+    const start = new Date(dateStr)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(dateStr)
+    end.setHours(23, 59, 59, 999)
+    whereClause.administeredAt = { gte: start, lte: end }
+  }
+
   try {
-    const session = (await getSession()) as any
-    const data = await request.json()
-    
-    if (!data.medicationId) {
-      return NextResponse.json({ error: 'Medication ID required' }, { status: 400 })
-    }
-
-    let byUserId = session?.userId
-
-    // If an admin requests to log it for another user
-    if (session?.role === 'ADMIN' && data.administeredByUserId) {
-      byUserId = data.administeredByUserId
-    }
-
-    const log = await prisma.administrationLog.create({
-      data: {
-        medicationId: data.medicationId,
-        administeredAt: data.administeredAt ? new Date(data.administeredAt) : new Date(),
-        administeredByUserId: byUserId || null,
-        notes: data.notes || null
+    const logs = await prisma.administrationLog.findMany({
+      where: whereClause,
+      orderBy: { administeredAt: 'desc' },
+      include: {
+        medication: { select: { name: true, alias: true } },
+        administeredByUser: { select: { id: true, name: true, username: true } }
       }
     })
-
-    return NextResponse.json({ log })
-  } catch (error) {
-    console.error('Error creating log', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ logs })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

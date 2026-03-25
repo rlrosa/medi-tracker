@@ -159,3 +159,14 @@ h1, h2, h3, h4, h5, h6 {
 .justify-between {
   justify-content: space-between;
 }
+
+/* Animations */
+@keyframes pulse-danger-bg {
+  0% { background-color: var(--glass-bg); }
+  50% { background-color: rgba(239, 68, 68, 0.15); }
+  100% { background-color: var(--glass-bg); }
+}
+
+.pulse-red-bg {
+  animation: pulse-danger-bg 2.5s infinite ease-in-out;
+}

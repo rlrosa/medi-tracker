@@ -4,7 +4,6 @@ import { Navigation } from '@/components/Navigation'
 import { useSettings } from '@/components/ThemeProvider'
 import Link from 'next/link'
 
-const beepSoundUrl = 'data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
 
 export default function Dashboard() {
   const { muteAudio } = useSettings()
@@ -18,6 +17,12 @@ export default function Dashboard() {
   const snoozedUntil = useRef<Record<string, number>>({})
   // We need state to trigger re-renders for snoozed buttons
   const [snoozeTrigger, setSnoozeTrigger] = useState(0)
+  
+  // Add a visible in-app toast for notification fallback
+  const [activeToast, setActiveToast] = useState<string | null>(null)
+  
+  // Track if we need explicit gesture for Android permissions
+  const [needsPermission, setNeedsPermission] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -52,11 +57,31 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 60000)
     
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission()
+      if (Notification.permission === 'default') {
+        setNeedsPermission(true)
+      }
     }
     
     return () => clearInterval(interval)
   }, [])
+
+  const requestPermissions = async () => {
+    if ('Notification' in window) {
+      const perm = await Notification.requestPermission()
+      setNeedsPermission(perm === 'default')
+    }
+    // Unlock Audio Context silently
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0; // completely silent
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
+  }
 
   const checkNotifications = (meds: any[]) => {
     const now = Date.now()
@@ -76,17 +101,38 @@ export default function Dashboard() {
   }
 
   const triggerNotification = (med: any) => {
+    // Show in-app visual toast to guarantee we see logic triggering
+    setActiveToast(`Notification: It is time to take ${med.name}!`)
+    setTimeout(() => setActiveToast(null), 5000)
+
     if (!muteAudio) {
       try {
-        const audio = new Audio(beepSoundUrl)
-        audio.play().catch(e => console.log('Audio play ignored'))
-      } catch(e) {}
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch(e) { console.log('Audio beep ignored by browser restriction') }
     }
+    
+    // Attempt standard OS notification
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Medication Due!', {
-        body: `It is time to take ${med.name}`,
-        icon: med.imageUrl || undefined
-      })
+      try {
+        new Notification('Medication Due!', {
+          body: `It is time to take ${med.name}`,
+          icon: med.imageUrl || undefined
+        })
+      } catch(e) { console.log('OS notification blocked.') }
     }
   }
 
@@ -118,6 +164,18 @@ export default function Dashboard() {
     <div className="container">
       <Navigation />
       
+      {needsPermission && (
+        <div className="glass-panel" style={{ background: 'rgba(56, 189, 248, 0.1)', borderColor: 'var(--accent-primary)', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>Enable Background Alerts</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>We need your permission to send push notifications and play sounds when a medication is due.</p>
+          </div>
+          <button onClick={requestPermissions} className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '24px' }}>
+            Allow Alerts
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>Loading...</div>
       ) : (
@@ -141,7 +199,7 @@ export default function Dashboard() {
                 const isWithinMargin = Math.abs(dueTime - now) <= marginMs
 
                 return (
-                  <div key={med.instanceId || med.id} className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderLeft: med.isOverdue ? '4px solid var(--danger)' : '1px solid var(--glass-border)' }}>
+                  <div key={med.instanceId || med.id} className={`glass-panel ${med.isOverdue ? 'pulse-red-bg' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderLeft: med.isOverdue ? '4px solid var(--danger)' : '1px solid var(--glass-border)' }}>
                     {med.imageUrl && (
                       <img src={med.imageUrl} alt={med.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} />
                     )}
@@ -208,8 +266,9 @@ export default function Dashboard() {
           
           <div className="flex-col" style={{ gap: '1.5rem' }}>
             <div className="glass-panel">
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-                Recent Administrations
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Recent Administrations</span>
+                <Link href="/logs" style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'normal' }}>See All →</Link>
               </h3>
               <div className="flex-col" style={{ gap: '1rem' }}>
                 {recent.length === 0 ? <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>No recent logs.</p> : recent.slice(0, 10).map(log => (
@@ -220,15 +279,32 @@ export default function Dashboard() {
                         {new Date(log.administeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>By: {log.administeredByUser?.name || log.administeredByUser?.username || 'Unknown'}</span>
-                      {log.notes && <span style={{ fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0 0.3rem', borderRadius: '4px' }}>Note: {log.notes}</span>}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {log.notes && <span style={{ fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0 0.3rem', borderRadius: '4px' }}>Note: {log.notes}</span>}
+                        {(user?.role === 'ADMIN' || user?.id === log.administeredByUserId) && (
+                          <Link href={`/log/${log.id}/edit`} style={{ fontSize: '0.75rem', color: 'var(--accent-secondary)', textDecoration: 'none', background: 'var(--glass-border)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Edit</Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {activeToast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999,
+          background: 'var(--accent-primary)', color: 'white',
+          padding: '1rem 1.5rem', borderRadius: '8px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          fontWeight: 'bold', animation: 'fadeIn 0.3s ease-out'
+        }}>
+          🔔 {activeToast}
         </div>
       )}
     </div>
