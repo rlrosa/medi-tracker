@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  username      String    @unique
+  passwordHash  String
+  role          String    @default("USER") // 'ADMIN' or 'USER'
+  logs          AdministrationLog[]
+  createdAt     DateTime  @default(now())
+}
+
+model Medication {
+  id            String    @id @default(cuid())
+  name          String
+  alias         String?
+  imageUrl      String?
+  
+  // Schedule
+  intervalHours Int?      // Every N hours
+  daysOfWeek    String?   // comma separated 0-6 (0=Sunday)
+  startDate     DateTime?
+  endDate       DateTime?
+
+  logs          AdministrationLog[]
+  createdAt     DateTime  @default(now())
+}
+
+model AdministrationLog {
+  id                   String      @id @default(cuid())
+  medicationId         String
+  medication           Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  
+  administeredAt       DateTime    @default(now())
+  
+  administeredByUserId String?
+  administeredByUser   User?       @relation(fields: [administeredByUserId], references: [id], onDelete: SetNull)
+  
+  notes                String?
+  createdAt            DateTime    @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
