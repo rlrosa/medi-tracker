@@ -315,12 +315,7 @@ export default function Dashboard() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Log in to administer</div>
                       )}
                       
-                      {user?.role === 'ADMIN' && (
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <Link href={`/edit/${med.id}`} className="btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)' }}>Edit</Link>
-                          <button onClick={() => handleDelete(med.id)} className="btn" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: 'transparent', color: 'var(--danger)' }}>Delete</button>
-                        </div>
-                      )}
+                      {/* Edit/Delete removed to avoid confusion with master management */}
                     </div>
                   </div>
                 )

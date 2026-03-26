@@ -60,22 +60,34 @@ model Medication {
   name          String
   alias         String?
   imageUrl      String?
+  createdAt     DateTime            @default(now())
+  patientId     String?
+  patient       Patient?            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  schedules     MedicationSchedule[]
+  logs          AdministrationLog[]
+}
+
+model MedicationSchedule {
+  id            String              @id @default(cuid())
+  medicationId  String
+  medication    Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  name          String?             // e.g. "Morning Dose"
   intervalHours Int?
   daysOfWeek    String?
   startDate     DateTime?
   endDate       DateTime?
-  createdAt     DateTime            @default(now())
   marginMinutes Int                 @default(30)
   color         String?
   icon          String?
-  patientId     String?
+  createdAt     DateTime            @default(now())
   logs          AdministrationLog[]
-  patient       Patient?            @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 model AdministrationLog {
   id                   String     @id @default(cuid())
   medicationId         String
+  scheduleId           String?
+  status               String     @default("ADMINISTERED") // "ADMINISTERED" | "SKIPPED"
   administeredAt       DateTime
   administeredByUserId String?
   notes                String?
@@ -83,6 +95,7 @@ model AdministrationLog {
   scheduledAt          DateTime?
   administeredByUser   User?      @relation(fields: [administeredByUserId], references: [id])
   medication           Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  schedule             MedicationSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 }
 
 model Setting {
