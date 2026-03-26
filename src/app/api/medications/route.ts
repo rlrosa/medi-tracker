@@ -53,6 +53,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid Patient ID' }, { status: 400 })
     }
 
+    const schedules = data.schedules && Array.isArray(data.schedules) ? data.schedules : [{
+      name: data.scheduleName || 'Primary Schedule',
+      intervalHours: data.intervalHours ? parseInt(String(data.intervalHours), 10) : null,
+      daysOfWeek: data.daysOfWeek || null,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      marginMinutes: data.marginMinutes ? parseInt(String(data.marginMinutes), 10) : 30,
+      color: data.color || null,
+      icon: data.icon || null
+    }]
+
     const medication = await prisma.medication.create({
       data: {
         name: data.name,
@@ -60,16 +71,16 @@ export async function POST(request: Request) {
         imageUrl: data.imageUrl || null,
         patientId: data.patientId,
         schedules: {
-          create: {
-            name: 'Primary Schedule',
-            intervalHours: data.intervalHours ? parseInt(String(data.intervalHours), 10) : null,
-            daysOfWeek: data.daysOfWeek || null,
-            startDate: data.startDate ? new Date(data.startDate) : null,
-            endDate: data.endDate ? new Date(data.endDate) : null,
-            marginMinutes: data.marginMinutes ? parseInt(String(data.marginMinutes), 10) : 30,
-            color: data.color || null,
-            icon: data.icon || null
-          }
+          create: schedules.map((s: any) => ({
+            name: s.name || 'Schedule',
+            intervalHours: s.intervalHours ? parseInt(String(s.intervalHours), 10) : null,
+            daysOfWeek: s.daysOfWeek || null,
+            startDate: s.startDate ? new Date(s.startDate) : null,
+            endDate: s.endDate ? new Date(s.endDate) : null,
+            marginMinutes: s.marginMinutes ? parseInt(String(s.marginMinutes), 10) : 30,
+            color: s.color || data.color || null,
+            icon: s.icon || data.icon || null
+          }))
         }
       },
       include: { schedules: true }

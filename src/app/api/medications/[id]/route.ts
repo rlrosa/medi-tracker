@@ -68,15 +68,79 @@ export async function PUT(
         name: data.name,
         alias: data.alias || null,
         imageUrl: data.imageUrl || null,
-        color: data.color || null,
-        icon: data.icon || null,
+      }
+    })
+
+    if (data.schedules && Array.isArray(data.schedules)) {
+      const scheduleIdsToKeep = data.schedules.filter((s: any) => s.id).map((s: any) => s.id)
+      
+      // Delete removed schedules
+      await prisma.medicationSchedule.deleteMany({
+        where: {
+          medicationId: id,
+          id: { notIn: scheduleIdsToKeep }
+        }
+      })
+
+      // Update or Create
+      for (const s of data.schedules) {
+        const scheduleData = {
+          name: s.name || 'Schedule',
+          intervalHours: s.intervalHours ? parseInt(String(s.intervalHours), 10) : null,
+          marginMinutes: s.marginMinutes !== undefined ? parseInt(String(s.marginMinutes), 10) : 30,
+          daysOfWeek: s.daysOfWeek || null,
+          startDate: s.startDate ? new Date(s.startDate) : null,
+          endDate: s.endDate ? new Date(s.endDate) : null,
+          color: s.color || null,
+          icon: s.icon || null,
+        }
+
+        if (s.id) {
+          await prisma.medicationSchedule.update({
+            where: { id: s.id },
+            data: scheduleData
+          })
+        } else {
+          await prisma.medicationSchedule.create({
+            data: {
+              ...scheduleData,
+              medicationId: id
+            }
+          })
+        }
+      }
+    } else {
+      // Fallback: update primary schedule like before
+      const primarySchedule = await prisma.medicationSchedule.findFirst({
+        where: { medicationId: id },
+        orderBy: { createdAt: 'asc' }
+      })
+
+      const scheduleData = {
         intervalHours: data.intervalHours ? parseInt(String(data.intervalHours), 10) : null,
         marginMinutes: data.marginMinutes !== undefined ? parseInt(String(data.marginMinutes), 10) : 30,
         daysOfWeek: data.daysOfWeek || null,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
+        color: data.color || null,
+        icon: data.icon || null,
       }
-    })
+
+      if (primarySchedule) {
+        await prisma.medicationSchedule.update({
+          where: { id: primarySchedule.id },
+          data: scheduleData
+        })
+      } else {
+        await prisma.medicationSchedule.create({
+          data: {
+            ...scheduleData,
+            medicationId: id,
+            name: 'Primary Schedule'
+          }
+        })
+      }
+    }
 
     return NextResponse.json({ medication })
   } catch (error) {

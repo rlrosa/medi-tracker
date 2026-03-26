@@ -12,19 +12,24 @@ export default function EditMedication() {
   
   const [loading, setLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [selectedDays, setSelectedDays] = useState<number[]>([])
 
   const [form, setForm] = useState({
     name: '',
     alias: '',
     imageUrl: '',
+  })
+
+  const [schedules, setSchedules] = useState<any[]>([{
+    name: 'Primary Schedule',
     intervalHours: '',
     marginMinutes: '30',
     startDate: '',
-    endDate: ''
-  })
+    endDate: '',
+    color: '#3b82f6',
+    icon: 'Pill',
+    daysOfWeek: null
+  }])
 
-  // Format a Date object to YYYY-MM-DDThh:mm string for the local input
   const formatForInput = (isoString: string) => {
     if (!isoString) return ''
     const d = new Date(isoString)
@@ -54,53 +59,39 @@ export default function EditMedication() {
         name: med.name || '',
         alias: med.alias || '',
         imageUrl: med.imageUrl || '',
-        intervalHours: med.intervalHours ? med.intervalHours.toString() : '',
-        marginMinutes: med.marginMinutes ? med.marginMinutes.toString() : '30',
-        startDate: med.startDate ? formatForInput(med.startDate) : '',
-        endDate: med.endDate ? formatForInput(med.endDate) : ''
       })
-      if (med.daysOfWeek) {
-        // Expand ranges to individual selected day numbers if needed, 
-        // but wait our day picker only created comma separated numbers so far.
-        // If it was created as '0-6', expand it:
-        let parsed: number[] = []
-        med.daysOfWeek.split(',').forEach((p: string) => {
-          if (p.includes('-')) {
-            const [s, e] = p.split('-').map(Number)
-            for (let i = s; i <= e; i++) parsed.push(i)
-          } else {
-            parsed.push(Number(p))
-          }
-        })
-        setSelectedDays([...new Set(parsed)])
+      if (med.schedules && med.schedules.length > 0) {
+        setSchedules(med.schedules.map((s: any) => ({
+          ...s,
+          intervalHours: s.intervalHours ? s.intervalHours.toString() : '',
+          marginMinutes: s.marginMinutes ? s.marginMinutes.toString() : '30',
+          startDate: s.startDate ? formatForInput(s.startDate) : '',
+          endDate: s.endDate ? formatForInput(s.endDate) : '',
+          color: s.color || '#3b82f6',
+          icon: s.icon || 'Pill',
+          daysOfWeek: s.daysOfWeek
+        })))
       }
     }
   }
 
-  const toggleDay = (index: number) => {
-    if (selectedDays.includes(index)) {
-      setSelectedDays(selectedDays.filter(d => d !== index))
-    } else {
-      setSelectedDays([...selectedDays, index])
-    }
+  const updateSchedule = (idx: number, updatedFields: any) => {
+    setSchedules(prev => prev.map((s, i) => i === idx ? { ...s, ...updatedFields } : s))
   }
-
-  const setEveryday = () => setSelectedDays([0, 1, 2, 3, 4, 5, 6])
-  const clearDays = () => setSelectedDays([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
-    // Sort days numerically
-    const daysOfWeekStr = selectedDays.length > 0 ? selectedDays.sort((a,b) => a - b).join(',') : null
-
     const payload = {
       ...form,
-      marginMinutes: form.marginMinutes ? parseInt(form.marginMinutes, 10) : 30,
-      daysOfWeek: daysOfWeekStr,
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
+      schedules: schedules.map(s => ({
+        ...s,
+        intervalHours: s.intervalHours ? parseInt(s.intervalHours, 10) : null,
+        marginMinutes: s.marginMinutes ? parseInt(s.marginMinutes, 10) : 30,
+        startDate: s.startDate ? new Date(s.startDate).toISOString() : null,
+        endDate: s.endDate ? new Date(s.endDate).toISOString() : null,
+      }))
     }
 
     const res = await fetch(`/api/medications/${medId}`, {
@@ -143,59 +134,121 @@ export default function EditMedication() {
             <label style={{ display: 'block', marginBottom: '0.25rem' }}>Image URL (Optional)</label>
             <input type="url" className="input-field" placeholder="https://..." value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
           </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '1rem 0' }} />
           
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.25rem' }}>Interval (Hours between doses) (Optional)</label>
-            <input type="number" min="1" className="input-field" value={form.intervalHours} onChange={e => setForm({...form, intervalHours: e.target.value})} />
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            Schedules
+            <button 
+              type="button" 
+              onClick={() => setSchedules([...schedules, { name: 'New Schedule', intervalHours: '24', marginMinutes: '30', color: '#3b82f6', icon: 'Pill' }])}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}
+            >
+              + Add Schedule
+            </button>
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {schedules.map((s, sIdx) => {
+              const currentDays = s.daysOfWeek ? s.daysOfWeek.split(',').map(Number) : []
+              const toggleDay = (day: number) => {
+                const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day]
+                updateSchedule(sIdx, { daysOfWeek: newDays.sort((a,b) => a-b).join(',') })
+              }
+
+              return (
+                <div key={sIdx} className="glass-panel" style={{ padding: '1rem', position: 'relative', border: '1px solid var(--accent-primary)' }}>
+                  {schedules.length > 1 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSchedules(schedules.filter((_, i) => i !== sIdx))}
+                      style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Schedule Name (e.g. Morning Routine)</label>
+                    <input required type="text" className="input-field" value={s.name} onChange={e => updateSchedule(sIdx, { name: e.target.value })} />
+                  </div>
+
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem' }}>Color</label>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                        {['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'].map(c => (
+                          <div key={c} onClick={() => updateSchedule(sIdx, { color: c })} style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: c, cursor: 'pointer', border: s.color === c ? '2px solid white' : 'none', boxShadow: s.color === c ? '0 0 0 2px var(--accent-primary)' : 'none' }} />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem' }}>Icon</label>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                        {['Pill', 'Droplet', 'Thermometer', 'Heart', 'Activity'].map(iconName => (
+                          <div key={iconName} onClick={() => updateSchedule(sIdx, { icon: iconName })} style={{ padding: '0.1rem', borderRadius: '4px', cursor: 'pointer', background: s.icon === iconName ? 'var(--accent-primary)' : 'var(--bg-secondary)', color: s.icon === iconName ? 'white' : 'inherit', fontSize: '1rem' }}>
+                            {iconName === 'Pill' ? '💊' : iconName === 'Droplet' ? '💧' : iconName === 'Thermometer' ? '🌡️' : iconName === 'Heart' ? '❤️' : '📈'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Interval (Hours)</label>
+                      <input type="number" min="1" className="input-field" value={s.intervalHours} onChange={e => updateSchedule(sIdx, { intervalHours: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Flex Window (Min)</label>
+                      <input required type="number" min="0" className="input-field" value={s.marginMinutes} onChange={e => updateSchedule(sIdx, { marginMinutes: e.target.value })} />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <label style={{ fontSize: '0.8rem' }}>Days of Week</label>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      {DAYS.map((dayName, dayIdx) => (
+                        <button
+                          key={dayName}
+                          type="button"
+                          onClick={() => toggleDay(dayIdx)}
+                          className="btn"
+                          style={{ 
+                            padding: '0.4rem', 
+                            borderRadius: '4px',
+                            backgroundColor: currentDays.includes(dayIdx) ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                            color: currentDays.includes(dayIdx) ? 'white' : 'var(--text-primary)',
+                            flex: 1,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {dayName}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Starts</label>
+                      <input type="datetime-local" className="input-field" value={s.startDate} onChange={e => updateSchedule(sIdx, { startDate: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Ends (Optional)</label>
+                      <input type="datetime-local" className="input-field" value={s.endDate} onChange={e => updateSchedule(sIdx, { endDate: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.25rem' }}>Margin (Minutes flexibility window) *</label>
-            <input required type="number" min="0" className="input-field" value={form.marginMinutes} onChange={e => setForm({...form, marginMinutes: e.target.value})} />
-          </div>
-          
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <label>Days of Week (Optional)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" onClick={setEveryday} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)' }}>Everyday</button>
-                <button type="button" onClick={clearDays} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-secondary)' }}>Clear</button>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {DAYS.map((day, ix) => (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => toggleDay(ix)}
-                  className="btn"
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    borderRadius: 'var(--border-radius-sm)',
-                    backgroundColor: selectedDays.includes(ix) ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                    color: selectedDays.includes(ix) ? 'white' : 'var(--text-primary)',
-                    flex: '1 1 12%'
-                  }}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Start Date/Time (Optional)</label>
-              <input type="datetime-local" className="input-field" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.25rem' }}>End Date/Time (Optional)</label>
-              <input type="datetime-local" className="input-field" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} />
-            </div>
-          </div>
-
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            {loading ? 'Saving...' : 'Save Changes'}
+          <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: '2rem', padding: '1rem' }}>
+            {loading ? 'Saving...' : 'Update Medication & Schedules'}
           </button>
         </form>
       </div>
