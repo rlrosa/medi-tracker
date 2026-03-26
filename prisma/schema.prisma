@@ -63,6 +63,19 @@ model Medication {
   createdAt     DateTime            @default(now())
   patientId     String?
   patient       Patient?            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  // Legacy fields preserved for migration
+  intervalHours Int?
+  daysOfWeek    String?
+  startDate     DateTime?
+  endDate       DateTime?
+  marginMinutes Int?
+  frequency     String?
+  hour          Int?
+  minute        Int?
+  color         String?
+  icon          String?
+
   schedules     MedicationSchedule[]
   logs          AdministrationLog[]
 }

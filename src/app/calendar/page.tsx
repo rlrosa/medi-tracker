@@ -10,6 +10,7 @@ export default function CalendarView() {
   const [days, setDays] = useState(3)
   const [viewDate, setViewDate] = useState(new Date())
   const [upcoming, setUpcoming] = useState<any[]>([])
+  const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [selectedEntry, setSelectedEntry] = useState<any>(null)
@@ -24,10 +25,13 @@ export default function CalendarView() {
       const hours = days * 24
       const start = new Date(viewDate)
       start.setHours(0, 0, 0, 0)
+      const end = new Date(start)
+      end.setDate(end.getDate() + days)
       
-      const [meRes, upcomingRes, usersRes] = await Promise.all([
+      const [meRes, upcomingRes, logsRes, usersRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch(`/api/medications/upcoming?hours=${hours}&startDate=${start.toISOString()}`),
+        fetch(`/api/logs?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
         fetch('/api/users')
       ])
       
@@ -47,6 +51,11 @@ export default function CalendarView() {
       if (upcomingRes.ok) {
         const uData = await upcomingRes.json()
         setUpcoming(uData.upcoming || [])
+      }
+
+      if (logsRes.ok) {
+        const lData = await logsRes.json()
+        setLogs(lData.logs || [])
       }
     } catch (err) {
       console.error(err)
@@ -180,11 +189,101 @@ export default function CalendarView() {
             boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
           }}>
             {dayDates.map((date, idx) => {
-              const dayMeds = upcoming.filter(m => {
+              const now = new Date()
+              const dayStart = new Date(date)
+              dayStart.setHours(0, 0, 0, 0)
+              const dayEnd = new Date(date)
+              dayEnd.setHours(23, 59, 59, 999)
+
+              const dayMedsFiltered = upcoming.filter(m => {
                 const medDate = new Date(m.nextDue)
-                return medDate.getDate() === date.getDate() && 
-                       medDate.getMonth() === date.getMonth() &&
-                       medDate.getFullYear() === date.getFullYear()
+                return medDate >= dayStart && medDate <= dayEnd
+              })
+
+              const dayLogs = logs.filter(l => {
+                const d = new Date(l.administeredAt)
+                return d >= dayStart && d <= dayEnd
+              })
+
+              const matchedLogIds = new Set()
+              const finalEntries: any[] = []
+
+              // 1. Process Scheduled Meds
+              dayMedsFiltered.forEach(med => {
+                const scheduledTime = new Date(med.nextDue)
+                const isPast = scheduledTime < now
+                
+                // Find closest log match within 3 hours
+                const matches = dayLogs
+                  .filter(l => l.medicationId === med.id && !matchedLogIds.has(l.id))
+                  .sort((a, b) => {
+                    const aDiff = Math.abs(new Date(a.administeredAt).getTime() - scheduledTime.getTime())
+                    const bDiff = Math.abs(new Date(b.administeredAt).getTime() - scheduledTime.getTime())
+                    return aDiff - bDiff
+                  })
+                
+                const bestMatch = matches[0]
+                const diff = bestMatch ? Math.abs(new Date(bestMatch.administeredAt).getTime() - scheduledTime.getTime()) : Infinity
+                
+                if (bestMatch && diff < 3 * 60 * 60 * 1000) {
+                  matchedLogIds.add(bestMatch.id)
+                  finalEntries.push({
+                    ...med,
+                    type: 'LOGGED',
+                    log: bestMatch,
+                    displayTime: new Date(bestMatch.administeredAt),
+                    scheduledAt: scheduledTime
+                  })
+                } else if (isPast) {
+                  finalEntries.push({
+                    ...med,
+                    type: 'MISSED',
+                    displayTime: scheduledTime
+                  })
+                } else {
+                  const windowStart = new Date(scheduledTime.getTime() - (med.marginMinutes || 30) * 60000)
+                  const windowEnd = new Date(scheduledTime.getTime() + (med.marginMinutes || 30) * 60000)
+                  const isInWindow = now >= windowStart && now <= windowEnd
+                  finalEntries.push({
+                    ...med,
+                    type: 'UPCOMING',
+                    displayTime: scheduledTime,
+                    isInWindow
+                  })
+                }
+              })
+
+              // 2. Add Unmatched Logs
+              dayLogs.forEach(l => {
+                if (!matchedLogIds.has(l.id)) {
+                  finalEntries.push({
+                    id: l.medicationId,
+                    name: l.medication.name,
+                    alias: l.medication.alias,
+                    color: l.medication.color || '#6366f1',
+                    icon: l.medication.icon || 'Pill',
+                    type: 'LOGGED',
+                    log: l,
+                    displayTime: new Date(l.administeredAt)
+                  })
+                }
+              })
+
+              // Sort for rendering
+              const sorted = finalEntries.sort((a,b) => a.displayTime.getTime() - b.displayTime.getTime())
+              
+              const activeGroups: any[][] = []
+              sorted.forEach(med => {
+                const medTime = med.displayTime.getTime()
+                let foundGroup = activeGroups.find(g => {
+                   const lastEnd = Math.max(...g.map(m => m.displayTime.getTime() + 45 * 60 * 1000))
+                   return medTime < lastEnd
+                })
+                if (!foundGroup) {
+                  foundGroup = []
+                  activeGroups.push(foundGroup)
+                }
+                foundGroup.push(med)
               })
 
               return (
@@ -223,108 +322,102 @@ export default function CalendarView() {
                     ))}
 
                     {/* Meds */}
-                    {(() => {
-                      // Sort by time
-                      const sorted = [...dayMeds].sort((a,b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime())
+                    {sorted.map((item, mIdx) => {
+                      const minutes = item.displayTime.getHours() * 60 + item.displayTime.getMinutes()
+                      const top = (minutes / 1440) * 100
                       
-                      // Calculate overlaps and columns
-                      const layouts: any[] = []
-                      const activeGroups: any[][] = []
+                      const group = activeGroups.find(g => g.includes(item)) || [item]
+                      const colIdx = group.indexOf(item)
+                      const totalCols = group.length
+                      
+                      const LucideIcon = (Icons as any)[item.icon || 'Pill'] || Icons.Pill
+                      const isNight = item.displayTime.getHours() >= 20 || item.displayTime.getHours() < 6
 
-                      sorted.forEach(med => {
-                        const medTime = new Date(med.nextDue).getTime()
-                        const medEnd = medTime + 45 * 60 * 1000 // Treat as 45min for overlap testing
-                        
-                        // Find a group or start a new one
-                        let foundGroup = activeGroups.find(g => {
-                           const lastEnd = Math.max(...g.map(m => new Date(m.nextDue).getTime() + 45 * 60 * 1000))
-                           return medTime < lastEnd
-                        })
+                      let borderStyle = `3px solid ${item.color || 'var(--accent-primary)'}`
+                      let opacity = 1
+                      let background = isNight ? 'rgba(99, 102, 241, 0.15)' : 'var(--glass-bg)'
 
-                        if (!foundGroup) {
-                          foundGroup = []
-                          activeGroups.push(foundGroup)
-                        }
-                        foundGroup.push(med)
-                      })
+                      if (item.type === 'LOGGED') {
+                        background = item.log.status === 'SKIPPED' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(34, 197, 94, 0.08)'
+                        opacity = 0.9
+                      } else if (item.type === 'MISSED') {
+                        borderStyle = `3px solid #ef4444`
+                        opacity = 0.7
+                      } else if (item.type === 'UPCOMING' && item.isInWindow) {
+                        background = 'rgba(255, 255, 255, 0.1)'
+                      }
 
-                      return sorted.map((med, mIdx) => {
-                        const medDate = new Date(med.nextDue)
-                        const minutes = medDate.getHours() * 60 + medDate.getMinutes()
-                        const top = (minutes / 1440) * 100
-                        
-                        // Find which group this med belongs to
-                        const group = activeGroups.find(g => g.includes(med)) || [med]
-                        const colIdx = group.indexOf(med)
-                        const totalCols = group.length
-                        
-                        const LucideIcon = (Icons as any)[med.icon || 'Pill'] || Icons.Pill
-                        const isNight = medDate.getHours() >= 20 || medDate.getHours() < 6
-
-                        return (
-                          <div 
-                            key={med.instanceId || mIdx}
-                            onClick={() => setSelectedEntry(med)}
-                            className="glass-panel"
-                            style={{
-                              position: 'absolute',
-                              top: `${top}%`,
-                              left: `${(colIdx / totalCols) * 100}%`,
-                              width: `${(1 / totalCols) * 100}%`,
-                              padding: '0.4rem',
-                              fontSize: '0.7rem',
-                              borderLeft: `3px solid ${med.color || 'var(--accent-primary)'}`,
-                              background: isNight ? 'rgba(99, 102, 241, 0.15)' : 'var(--glass-bg)',
-                              zIndex: 5,
-                              minHeight: '48px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px',
-                              overflow: 'hidden'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', flex: 1 }}>
-                                <LucideIcon size={12} style={{ color: med.color || 'var(--accent-primary)' }} />
-                                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{med.name}</span>
+                      return (
+                        <div 
+                          key={item.instanceId || item.log?.id || mIdx}
+                          onClick={() => setSelectedEntry(item)}
+                          className="glass-panel"
+                          style={{
+                            position: 'absolute',
+                            top: `${top}%`,
+                            left: `${(colIdx / totalCols) * 100}%`,
+                            width: `${(1 / totalCols) * 100}%`,
+                            padding: '0.4rem',
+                            fontSize: '0.7rem',
+                            borderLeft: borderStyle,
+                            borderLeftWidth: '4px',
+                            borderRadius: '8px',
+                            background,
+                            opacity,
+                            zIndex: item.type === 'UPCOMING' && item.isInWindow ? 10 : 5,
+                            minHeight: '48px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: item.type === 'UPCOMING' && item.isInWindow ? `0 0 15px ${item.color}44` : '0 4px 10px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', flex: 1 }}>
+                              <LucideIcon size={12} style={{ color: item.color || 'var(--accent-primary)' }} />
+                              <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                {item.name}
+                                {item.type === 'MISSED' && <span style={{ color: '#ef4444', marginLeft: '4px' }}>(Missed)</span>}
+                                {item.type === 'LOGGED' && item.log.status === 'SKIPPED' && <span style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>(Skipped)</span>}
+                              </span>
+                            </div>
+                            {totalCols === 1 && item.type === 'UPCOMING' && (
+                              <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                                 <button 
+                                   onClick={() => { setAdministeringMed({...item, status: 'ADMINISTERED'}); setAdministerNotes(''); }} 
+                                   style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--success)', opacity: 0.8 }}
+                                   title="Administer"
+                                 >
+                                   <Icons.Check size={12} strokeWidth={3} />
+                                 </button>
+                                 <button 
+                                   onClick={() => { if(confirm(`Skip ${item.name}?`)) { setAdministeringMed({...item, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }} 
+                                   style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--accent-primary)', opacity: 0.8 }}
+                                   title="Skip"
+                                 >
+                                   <Icons.SkipForward size={12} />
+                                 </button>
                               </div>
-                              {totalCols === 1 && (
-                                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
-                                   <button 
-                                     onClick={() => { setAdministeringMed({...med, status: 'ADMINISTERED'}); setAdministerNotes(''); }} 
-                                     style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--success)', opacity: 0.8 }}
-                                     title="Administer"
-                                   >
-                                     <Icons.Check size={12} strokeWidth={3} />
-                                   </button>
-                                   <button 
-                                     onClick={() => { if(confirm(`Skip ${med.name}?`)) { setAdministeringMed({...med, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }} 
-                                     style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--accent-primary)', opacity: 0.8 }}
-                                     title="Skip"
-                                   >
-                                     <Icons.SkipForward size={12} />
-                                   </button>
-                                   <button 
-                                     onClick={() => router.push(`/edit/${med.id}`)} 
-                                     style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--text-secondary)', opacity: 0.8 }}
-                                     title="Edit"
-                                   >
-                                     <Icons.Settings size={12} />
-                                   </button>
-                                </div>
-                              )}
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ opacity: 0.8 }}>{medDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              {isNight && <Icons.Moon size={10} style={{ opacity: 0.6 }} />}
-                            </div>
+                            )}
+                            {item.type === 'LOGGED' && <Icons.CheckCircle2 size={12} style={{ color: item.log.status === 'SKIPPED' ? 'var(--accent-primary)' : 'var(--success)' }} />}
                           </div>
-                        )
-                      })
-                    })()}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ opacity: 0.8 }}>
+                              {item.displayTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {item.type === 'LOGGED' && item.scheduledAt && (
+                                <span style={{ fontSize: '0.6rem', opacity: 0.6, marginLeft: '4px' }}>
+                                  (Sch: {item.scheduledAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                                </span>
+                              )}
+                            </span>
+                            {isNight && <Icons.Moon size={10} style={{ opacity: 0.6 }} />}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -363,36 +456,49 @@ export default function CalendarView() {
                 <h3 style={{ fontSize: '1.8rem', marginBottom: '0.25rem', fontWeight: '700' }}>{selectedEntry.name}</h3>
                 {selectedEntry.alias && <p style={{ color: 'var(--accent-primary)', fontWeight: '600', marginBottom: '0.5rem', fontSize: '1rem' }}>{selectedEntry.alias}</p>}
                 <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.Clock size={14} /> {new Date(selectedEntry.nextDue).toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' })}</p>
-                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.Calendar size={14} /> {selectedEntry.scheduleName}</p>
-                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.User size={14} /> {selectedEntry.patient?.name}</p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.Clock size={14} /> {selectedEntry.displayTime?.toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' }) || new Date(selectedEntry.nextDue).toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' })}</p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.Calendar size={14} /> {selectedEntry.scheduleName || 'Manual Log'}</p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Icons.User size={14} /> {selectedEntry.patient?.name || 'Unknown'}</p>
+                  {selectedEntry.log && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                      <p style={{ fontWeight: '600', color: selectedEntry.log.status === 'SKIPPED' ? 'var(--accent-primary)' : 'var(--success)' }}>
+                        {selectedEntry.log.status === 'SKIPPED' ? 'Skipped' : 'Administered'} at {new Date(selectedEntry.log.administeredAt).toLocaleTimeString()}
+                      </p>
+                      {selectedEntry.log.administeredByUser && <p>By: {selectedEntry.log.administeredByUser.name || selectedEntry.log.administeredByUser.email}</p>}
+                      {selectedEntry.log.notes && <p style={{ fontStyle: 'italic', marginTop: '0.2rem' }}>"{selectedEntry.log.notes}"</p>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex-col" style={{ gap: '0.75rem' }}>
-              <button 
-                className="btn btn-primary" 
-                style={{ height: '54px', fontSize: '1.2rem', background: 'var(--success)', color: 'white', width: '100%' }}
-                onClick={() => { setAdministeringMed({...selectedEntry, status: 'ADMINISTERED'}); setAdministerNotes(''); }}
-              >
-                ✓ Administer Now
-              </button>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {selectedEntry.type === 'UPCOMING' && (
                 <button 
-                  className="btn" 
-                  style={{ height: '54px', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', width: '100%' }}
-                  onClick={() => { if(confirm(`Skip ${selectedEntry.name}?`)) { setAdministeringMed({...selectedEntry, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }}
+                  className="btn btn-primary" 
+                  style={{ height: '54px', fontSize: '1.2rem', background: 'var(--success)', color: 'white', width: '100%' }}
+                  onClick={() => { setAdministeringMed({...selectedEntry, status: 'ADMINISTERED'}); setAdministerNotes(''); }}
                 >
-                  ⏭️ Skip Dose
+                  ✓ Administer Now
                 </button>
+              )}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: selectedEntry.type === 'UPCOMING' ? '1fr 1fr' : '1fr', gap: '0.75rem' }}>
+                {selectedEntry.type === 'UPCOMING' && (
+                  <button 
+                    className="btn" 
+                    style={{ height: '54px', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', width: '100%' }}
+                    onClick={() => { if(confirm(`Skip ${selectedEntry.name}?`)) { setAdministeringMed({...selectedEntry, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }}
+                  >
+                    ⏭️ Skip Dose
+                  </button>
+                )}
                 <button 
                   className="btn" 
                   style={{ height: '54px', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', width: '100%' }}
                   onClick={() => router.push(`/edit/${selectedEntry.id}`)}
                 >
-                  ⚙️ Edit Rules
+                  ⚙️ {selectedEntry.type === 'LOGGED' ? 'View/Edit Rules' : 'Edit Rules'}
                 </button>
               </div>
               

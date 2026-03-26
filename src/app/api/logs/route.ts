@@ -9,6 +9,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const medName = url.searchParams.get('name')
   const dateStr = url.searchParams.get('date')
+  const startDateStr = url.searchParams.get('startDate')
+  const endDateStr = url.searchParams.get('endDate')
   const userId = url.searchParams.get('user')
 
   const whereClause: any = {
@@ -27,7 +29,11 @@ export async function GET(request: Request) {
     whereClause.administeredByUserId = userId
   }
 
-  if (dateStr) {
+  if (startDateStr || endDateStr) {
+    whereClause.administeredAt = {}
+    if (startDateStr) whereClause.administeredAt.gte = new Date(startDateStr)
+    if (endDateStr) whereClause.administeredAt.lte = new Date(endDateStr)
+  } else if (dateStr) {
     const start = new Date(dateStr)
     start.setHours(0, 0, 0, 0)
     const end = new Date(dateStr)
