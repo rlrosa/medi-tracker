@@ -9,6 +9,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const medName = url.searchParams.get('name')
   const dateStr = url.searchParams.get('date')
+  const startDateStr = url.searchParams.get('startDate')
+  const endDateStr = url.searchParams.get('endDate')
   const userId = url.searchParams.get('user')
 
   const whereClause: any = {
@@ -27,7 +29,11 @@ export async function GET(request: Request) {
     whereClause.administeredByUserId = userId
   }
 
-  if (dateStr) {
+  if (startDateStr || endDateStr) {
+    whereClause.administeredAt = {}
+    if (startDateStr) whereClause.administeredAt.gte = new Date(startDateStr)
+    if (endDateStr) whereClause.administeredAt.lte = new Date(endDateStr)
+  } else if (dateStr) {
     const start = new Date(dateStr)
     start.setHours(0, 0, 0, 0)
     const end = new Date(dateStr)
@@ -57,7 +63,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json()
-    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt } = data
+    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status } = data
     
     // Verify medication belongs to the account
     const medication = await prisma.medication.findFirst({
@@ -81,6 +87,8 @@ export async function POST(request: Request) {
     const log = await prisma.administrationLog.create({
       data: {
         medicationId: String(medicationId),
+        scheduleId: scheduleId ? String(scheduleId) : null,
+        status: status === 'SKIPPED' ? 'SKIPPED' : 'ADMINISTERED',
         administeredAt: new Date(String(administeredAt)),
         scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
