@@ -24,15 +24,18 @@ export function Navigation() {
     // Click outside listener
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement
+      // If the menu is open and we click something that is NOT the toggle button 
+      // and NOT inside the menu container, close it.
       if (menuOpen && !target.closest('.nav-menu-container')) {
         setMenuOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-
+    
+    // Use click instead of mousedown to ensure it doesn't fire before the toggle
+    document.addEventListener('click', handleClickOutside)
     return () => {
       clearInterval(timer)
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('click', handleClickOutside)
     }
   }, [menuOpen])
 

@@ -3,22 +3,22 @@
 A modern, highly-responsive web application built with **Next.js 16 (App Router)**, **React**, and **Prisma ORM**, explicitly designed to track and manage complex medication schedules securely over the network.
 
 ## Core Features
-- **Advanced Scheduling Engine**: Schedule medications with custom hour intervals, specific days of the week, and date ranges. 
+- **Multi-Tenant Architecture**: Securely manage multiple households/families within a single database. Each account is isolated.
+- **Account & Patient Hierarchy**: Supports multiple patients per account (e.g., children, elderly parents) with shared caregiver access.
+- **Advanced Scheduling Engine**: Schedule medications with custom hour intervals, specific days of the week, and date ranges.
 - **Administration Windows (Margins)**: Medications can only be administered within a strictly customizable minute-based window (e.g., ±30 minutes) of their due time.
-- **Smart 24-Hour Projection Dashboard**: Context-aware dashboard that recursively projects all recurring doses forward 24 hours to give a comprehensive daily view.
-- **Push & Web Audio Alerts**: Built-in 5-minute recurring background alert system utilizing the native Browser Web Audio API paired with Fallback In-App UI Toasts to bypass aggressive OS silenecers. Snoozable.
-- **Custom Native Logs**: Advanced interface enabling users to log an administration for the *exact time* it happened in the past (to correct misses).
-- **Log Management & Analytics**: Live search, filtering (by User ID, exact Date, Medication Name), and full edit/delete privileges for all timeline administration logs.
-- **Hamburger UI & Dark Mode**: Responsive mobile-first navigation wrapped in a sleek glassmorphic design system.
+- **Smart 24-Hour Projection Dashboard**: Context-aware dashboard that recursively projects all recurring doses forward 24 hours.
+- **Push & Web Audio Alerts**: Built-in 5-minute recurring background alert system utilizing the native Browser Web Audio API.
+- **Flexible Login**: Support for both **Email** and **Username** authentication to accommodate legacy users and modern preferences.
+- **Caregiver Onboarding**: Manual "Link Generation" for invitations to bypass SMTP dependencies while maintaining security.
 
 ## Authentication & Roles
-The application uses a lightweight, secure cookie-based Next.js route handler encryption system.
+The application uses a secure JWT-based session system with encrypted cookies.
 
-- **Creating Users**: Simply click on "Login" -> "Register here". No email required.
+- **Account Registration**: New users create an `Account` and a primary `Patient` simultaneously.
 - **Role-Based Access**:
-  - **ADMIN**: The *very first user* registered in the system is automatically assigned the `ADMIN` role. Admins exclusively possess the global capability to Add/Edit/Delete Medications, override/backlog timestamps on behalf of other users via an interactive Dropdown list, and securely manage all logs.
-  - **USER**: Can securely interact with their own logs and administer active medications.
-  - **GUEST**: Unauthenticated devices entering the network can view a read-only projection of the dashboard but cannot tamper with the db logs.
+  - **ADMIN**: Account owners can manage Patients, Medications, and Caregivers. They can see all emails and logs for their account.
+  - **USER/CAREGIVER**: Can administer medications and view logs for all patients in the account.
 
 ## Getting Started
 

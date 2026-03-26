@@ -98,17 +98,24 @@ export default function InvitationsPage() {
             {invitations.map(inv => (
               <div key={inv.id} className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '1rem' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{inv.email}</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+                    {inv.name ? `${inv.name} (${inv.email})` : inv.email}
+                    {inv.isUser && <span style={{ marginLeft: '0.75rem', fontSize: '0.7rem', backgroundColor: 'var(--success)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px', verticalAlign: 'middle' }}>ACTIVE</span>}
+                  </h3>
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.85rem' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Role: {inv.role}</span>
-                    {inv.acceptedAt ? (
-                      <span style={{ color: 'var(--success)' }}>✅ Accepted {new Date(inv.acceptedAt).toLocaleDateString()}</span>
+                    {inv.isUser ? (
+                      <span style={{ color: 'var(--success)' }}>Joined {new Date(inv.acceptedAt).toLocaleDateString()}</span>
                     ) : (
-                      <span style={{ color: 'var(--accent-secondary)' }}>⏳ Pending (Expires {new Date(inv.expiresAt).toLocaleDateString()})</span>
+                      inv.acceptedAt ? (
+                        <span style={{ color: 'var(--success)' }}>✅ Accepted {new Date(inv.acceptedAt).toLocaleDateString()}</span>
+                      ) : (
+                        <span style={{ color: 'var(--accent-secondary)' }}>⏳ Pending (Expires {new Date(inv.expiresAt).toLocaleDateString()})</span>
+                      )
                     )}
                   </div>
                 </div>
-                {inv.acceptedAt ? (
+                {inv.isUser || inv.acceptedAt ? (
                   <button 
                     onClick={() => {
                       // Mock reset link generation

@@ -41,9 +41,9 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin} className="flex-col" style={{ gap: '1rem', display: 'flex' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email Address</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email or Username</label>
             <input 
-              type="email" 
+              type="text" 
               className="input-field" 
               value={email}
               onChange={e => setEmail(e.target.value)}
