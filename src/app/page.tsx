@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [administerLoading, setAdministerLoading] = useState(false)
   const [accountUsers, setAccountUsers] = useState<any[]>([])
   const [selectedCaregiverId, setSelectedCaregiverId] = useState('')
+  const [snoozingMed, setSnoozingMed] = useState<any>(null)
 
   const fetchData = async () => {
     try {
@@ -210,9 +211,12 @@ export default function Dashboard() {
   }
 
   const handleSnooze = (med: any) => {
-    const marginMin = med.marginMinutes || 30
-    const snoozeMin = Math.max(1, Math.floor(marginMin / 3))
-    snoozedUntil.current[med.id] = Date.now() + snoozeMin * 60 * 1000
+    setSnoozingMed(med)
+  }
+
+  const confirmSnooze = (med: any, minutes: number) => {
+    snoozedUntil.current[med.id] = Date.now() + minutes * 60 * 1000
+    setSnoozingMed(null)
     setSnoozeTrigger(snoozeTrigger + 1)
   }
 
@@ -244,9 +248,14 @@ export default function Dashboard() {
       ) : (
         <div className="grid dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
           <div className="flex-col" style={{ gap: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-              Upcoming Medications (24h)
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
+                Upcoming Medications
+              </h2>
+              <Link href="/calendar" className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '20px', background: 'var(--bg-secondary)', color: 'var(--accent-primary)', border: '1px solid var(--glass-border)', textDecoration: 'none' }}>
+                📅 View Timeline
+              </Link>
+            </div>
             
             {upcoming.length === 0 ? (
               <div className="glass-panel" style={{ textAlign: 'center', opacity: 0.7 }}>
@@ -330,12 +339,13 @@ export default function Dashboard() {
                               padding: '0.6rem 1rem',
                               borderRadius: '24px',
                               backgroundColor: 'var(--bg-secondary)',
-                              color: 'var(--danger)',
+                              color: 'var(--accent-primary)',
                               width: '100%',
                               fontSize: '0.9rem',
-                              borderColor: 'var(--danger)',
+                              borderColor: 'var(--accent-primary)',
                               borderWidth: '1px',
-                              borderStyle: 'solid'
+                              borderStyle: 'solid',
+                              opacity: 0.8
                             }}
                           >
                             ⏭️ Skip
@@ -443,6 +453,41 @@ export default function Dashboard() {
         </div>
       )}
       
+      {snoozingMed && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '350px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Icons.Clock size={20} />
+              <span>Snooze Duration</span>
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              How long would you like to snooze alerts for <strong>{snoozingMed.name}</strong>?
+            </p>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {[1, 5, 10, 15].map(m => (
+                <button key={m} onClick={() => confirmSnooze(snoozingMed, m)} className="btn" style={{ background: 'var(--bg-secondary)', padding: '0.75rem' }}>
+                  {m}m
+                </button>
+              ))}
+              <button 
+                onClick={() => {
+                  const marginMin = snoozingMed.marginMinutes || 30
+                  const smartMin = Math.max(1, Math.floor(marginMin / 3))
+                  confirmSnooze(snoozingMed, smartMin)
+                }} 
+                className="btn btn-primary"
+                style={{ gridColumn: 'span 2', padding: '0.75rem' }}
+              >
+                Default ({Math.max(1, Math.floor((snoozingMed.marginMinutes || 30) / 3))}m)
+              </button>
+              <button onClick={() => setSnoozingMed(null)} className="btn" style={{ gridColumn: 'span 2', background: 'transparent', border: '1px solid var(--glass-border)', marginTop: '0.5rem' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeToast && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999,

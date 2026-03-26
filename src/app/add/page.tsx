@@ -9,7 +9,10 @@ const SUGGESTED_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'
 ]
 const ICON_OPTIONS = [
-  'Pill', 'Droplet', 'Thermometer', 'Heart', 'Activity', 'Brain', 'Eye', 'Baby'
+  'Pill', 'Droplet', 'Thermometer', 'Heart', 'Activity', 'Brain', 'Eye', 'Baby', 
+  'Stethoscope', 'Syringe', 'Bandage', 'Bones', 'Milk', 'Coffee', 'Sun', 'Moon', 
+  'Cloud', 'Zap', 'Bell', 'Volume2', 'Shield', 'Clock', 'FlaskConical', 'Biohazard',
+  'Ambulance', 'FirstAid', 'HandMetal', 'Smile'
 ]
 
 export default function AddMedication() {

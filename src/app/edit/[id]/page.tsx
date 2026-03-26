@@ -2,8 +2,18 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Navigation } from '@/components/Navigation'
+import * as Icons from 'lucide-react'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const ICON_OPTIONS = [
+  'Pill', 'Droplet', 'Thermometer', 'Heart', 'Activity', 'Brain', 'Eye', 'Baby', 
+  'Stethoscope', 'Syringe', 'Bandage', 'Bones', 'Milk', 'Coffee', 'Sun', 'Moon', 
+  'Cloud', 'Zap', 'Bell', 'Volume2', 'Shield', 'Clock', 'FlaskConical', 'Biohazard',
+  'Ambulance', 'FirstAid', 'HandMetal', 'Smile'
+]
+const SUGGESTED_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'
+]
 
 export default function EditMedication() {
   const router = useRouter()
@@ -178,7 +188,7 @@ export default function EditMedication() {
                     <div>
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem' }}>Color</label>
                       <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                        {['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'].map(c => (
+                        {SUGGESTED_COLORS.map(c => (
                           <div key={c} onClick={() => updateSchedule(sIdx, { color: c })} style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: c, cursor: 'pointer', border: s.color === c ? '2px solid white' : 'none', boxShadow: s.color === c ? '0 0 0 2px var(--accent-primary)' : 'none' }} />
                         ))}
                       </div>
@@ -186,11 +196,14 @@ export default function EditMedication() {
                     <div>
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem' }}>Icon</label>
                       <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                        {['Pill', 'Droplet', 'Thermometer', 'Heart', 'Activity'].map(iconName => (
-                          <div key={iconName} onClick={() => updateSchedule(sIdx, { icon: iconName })} style={{ padding: '0.1rem', borderRadius: '4px', cursor: 'pointer', background: s.icon === iconName ? 'var(--accent-primary)' : 'var(--bg-secondary)', color: s.icon === iconName ? 'white' : 'inherit', fontSize: '1rem' }}>
-                            {iconName === 'Pill' ? '💊' : iconName === 'Droplet' ? '💧' : iconName === 'Thermometer' ? '🌡️' : iconName === 'Heart' ? '❤️' : '📈'}
-                          </div>
-                        ))}
+                        {ICON_OPTIONS.map(iconName => {
+                          const LucideIcon = (Icons as any)[iconName] || Icons.Pill
+                          return (
+                            <div key={iconName} onClick={() => updateSchedule(sIdx, { icon: iconName })} style={{ padding: '0.15rem', borderRadius: '4px', cursor: 'pointer', background: s.icon === iconName ? 'var(--accent-primary)' : 'var(--bg-secondary)', color: s.icon === iconName ? 'white' : 'inherit' }}>
+                              <LucideIcon size={16} />
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>

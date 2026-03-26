@@ -105,7 +105,10 @@ export function Navigation() {
             position: 'absolute', top: '100%', right: '2rem', zIndex: 100, 
             display: 'flex', flexDirection: 'column', gap: '1rem', 
             marginTop: '0.5rem', minWidth: '220px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            background: 'var(--bg-primary)', // Much more opaque than glass-bg
+            border: '1px solid var(--accent-primary)',
+            padding: '1.25rem'
           }}>
              <div style={{ fontSize: '0.9rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
                 {user ? (
@@ -121,9 +124,11 @@ export function Navigation() {
             {user?.role === 'ADMIN' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Management</span>
+                <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>📅 Medication Timeline</Link>
+                <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>📋 Administration Logs</Link>
                 <Link href="/patients" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>📂 Patients</Link>
                 <Link href="/medications" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>💊 Medications</Link>
-                <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 500 }}>+ Add New Med</Link>
+                <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>+ Add New Med</Link>
                 <Link href="/invitations" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>🤝 Caregivers</Link>
               </div>
             )}
