@@ -58,14 +58,14 @@ export default function InvitationsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>Management: Caregivers</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Invite and manage people who can administer medications.</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Generate access links for caregivers. <span style={{ color: 'var(--accent-secondary)' }}>(Email delivery disabled)</span></p>
           </div>
-          <button onClick={() => setShowAdd(true)} className="btn btn-primary">+ Invite Caregiver</button>
+          <button onClick={() => setShowAdd(true)} className="btn btn-primary">+ Generate Link</button>
         </div>
 
         {showAdd && (
-          <div className="glass-panel" style={{ marginBottom: '2rem', background: 'var(--bg-secondary)' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Send New Invitation</h3>
+          <div className="glass-panel" style={{ marginBottom: '2rem', background: 'var(--bg-secondary)', border: '1px solid var(--accent-secondary)' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Generate Caregiver Link</h3>
             <form onSubmit={handleCreateInvitation} className="flex-col" style={{ gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.25rem' }}>Email Address</label>
@@ -80,7 +80,7 @@ export default function InvitationsPage() {
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button type="button" onClick={() => setShowAdd(false)} className="btn">Cancel</button>
-                <button type="submit" className="btn btn-primary">Send Invitation</button>
+                <button type="submit" className="btn btn-primary">Create Link</button>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 Note: In this demo, the invitation will appear in the list below with a "Copy Link" option.
