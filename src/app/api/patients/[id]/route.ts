@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await getSession()
   if (!session || !session.accountId || session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -11,7 +12,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   try {
     const patient = await prisma.patient.findFirst({
       where: {
-        id: params.id,
+        id,
         accountId: session.accountId as string
       }
     })
@@ -21,7 +22,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     await prisma.patient.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })
@@ -31,7 +32,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await getSession()
   if (!session || !session.accountId || session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -42,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     
     const patient = await prisma.patient.findFirst({
       where: {
-        id: params.id,
+        id,
         accountId: session.accountId as string
       }
     })
@@ -52,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const updated = await prisma.patient.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: name !== undefined ? name : undefined,
         selfMedication: selfMedication !== undefined ? !!selfMedication : undefined
