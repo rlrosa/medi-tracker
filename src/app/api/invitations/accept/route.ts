@@ -43,6 +43,10 @@ export async function POST(request: Request) {
       })
     ])
 
+    if (!user.accountId) {
+      throw new Error('User created without an account link')
+    }
+
     // Log them in immediately
     await createSession(user.id, user.accountId, user.role)
 
