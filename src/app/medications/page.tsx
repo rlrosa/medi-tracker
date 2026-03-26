@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Navigation } from '@/components/Navigation'
+import * as Icons from 'lucide-react'
 
 export default function ManageMedicationsPage() {
   const router = useRouter()
@@ -10,14 +11,12 @@ export default function ManageMedicationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 1. Check if Admin
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
         if (!data.user || data.user.role !== 'ADMIN') {
           router.push('/')
         } else {
-          // 2. Fetch all medications regardless of schedule
           fetch('/api/medications')
             .then(res => res.json())
             .then(medData => {
@@ -47,7 +46,10 @@ export default function ManageMedicationsPage() {
       
       <div className="glass-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.5rem', color: 'var(--accent-primary)' }}>Manage All Medications</h2>
+          <div>
+            <h2 style={{ fontSize: '1.5rem', color: 'var(--accent-primary)', marginBottom: '0.25rem' }}>Manage All Medications</h2>
+            <Link href="/patients" style={{ fontSize: '0.9rem', color: 'var(--accent-secondary)', textDecoration: 'none' }}>→ Manage Patients</Link>
+          </div>
           <Link href="/add" className="btn btn-primary" style={{ textDecoration: 'none' }}>
             + Add New
           </Link>
@@ -61,15 +63,25 @@ export default function ManageMedicationsPage() {
           <div className="grid">
             {medications.map(med => (
               <div key={med.id} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1.5rem', backgroundColor: 'var(--bg-secondary)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  {med.imageUrl && (
-                    <img src={med.imageUrl} alt={med.name} style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover' }} />
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: med.color || 'var(--accent-primary)', borderRadius: '12px', color: 'white' }}>
+                    {med.imageUrl ? (
+                      <img src={med.imageUrl} alt={med.name} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                    ) : (
+                      (() => {
+                        const LucideIcon = (Icons as any)[med.icon || 'Pill'] || Icons.Pill
+                        return <LucideIcon size={24} />
+                      })()
+                    )}
+                  </div>
                   <div style={{ flexGrow: 1 }}>
-                    <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{med.name} {med.alias ? `(${med.alias})` : ''}</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-                      Every {med.intervalHours}h {med.marginMinutes ? `±${med.marginMinutes}m` : ''}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{med.name} {med.alias ? `(${med.alias})` : ''}</h3>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      <span>👤 {med.patient?.name || 'No Patient'}</span>
+                      <span>🕒 Every {med.intervalHours || 'N/A'}h</span>
+                    </div>
                   </div>
                 </div>
                 

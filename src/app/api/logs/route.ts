@@ -4,17 +4,23 @@ import { getSession } from '@/lib/session'
 
 export async function GET(request: Request) {
   const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session || !session.accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(request.url)
   const medName = url.searchParams.get('name')
   const dateStr = url.searchParams.get('date')
   const userId = url.searchParams.get('user')
 
-  const whereClause: any = {}
+  const whereClause: any = {
+    medication: {
+      patient: {
+        accountId: session.accountId as string
+      }
+    }
+  }
 
   if (medName) {
-    whereClause.medication = { name: { contains: medName, mode: 'insensitive' } }
+    whereClause.medication.name = { contains: medName, mode: 'insensitive' }
   }
   
   if (userId) {
@@ -22,7 +28,6 @@ export async function GET(request: Request) {
   }
 
   if (dateStr) {
-    // dateStr in YYYY-MM-DD format
     const start = new Date(dateStr)
     start.setHours(0, 0, 0, 0)
     const end = new Date(dateStr)
@@ -36,24 +41,38 @@ export async function GET(request: Request) {
       orderBy: { administeredAt: 'desc' },
       include: {
         medication: { select: { name: true, alias: true } },
-        administeredByUser: { select: { id: true, name: true, username: true } }
+        administeredByUser: { select: { id: true, name: true, email: true } }
       }
     })
     return NextResponse.json({ logs })
   } catch (err) {
-    console.error(err)
+    console.error('Error fetching logs', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session || !session.accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const data = await request.json()
     const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt } = data
     
+    // Verify medication belongs to the account
+    const medication = await prisma.medication.findFirst({
+      where: {
+        id: String(medicationId),
+        patient: {
+          accountId: session.accountId as string
+        }
+      }
+    })
+
+    if (!medication) {
+      return NextResponse.json({ error: 'Invalid Medication ID' }, { status: 400 })
+    }
+
     let finalUserId: string = String(session.userId)
     if (session.role === 'ADMIN' && typeof administeredByUserId === 'string' && administeredByUserId) {
       finalUserId = administeredByUserId
@@ -71,7 +90,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ log })
   } catch (error) {
-    console.error(error)
+    console.error('Error creating log', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

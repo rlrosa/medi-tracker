@@ -5,14 +5,15 @@ import { createSession } from '@/lib/session'
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json()
+    const { email, password } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { email },
+      include: { account: true }
     })
 
     if (!user) {
@@ -24,10 +25,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    await createSession(user.id, user.role)
+    await createSession(user.id, user.accountId, user.role)
 
     return NextResponse.json({
-      user: { id: user.id, username: user.username, name: user.name, role: user.role }
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      account: { id: user.account.id, name: user.account.name, type: user.account.type }
     })
   } catch (error) {
     console.error('Login error', error)
