@@ -181,7 +181,11 @@ export default function Dashboard() {
       const res = await fetch('/api/logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          scheduleId: administeringMed.scheduleId,
+          status: administeringMed.status || 'ADMINISTERED'
+        })
       })
       if (res.ok) {
         setAdministeringMed(null)
@@ -272,7 +276,10 @@ export default function Dashboard() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <h3 style={{ fontSize: '1.25rem' }}>{med.name}</h3>
-                        {med.patient && <span style={{ fontSize: '0.75rem', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.patient.name}</span>}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                          {med.patient && <span style={{ fontSize: '0.7rem', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.patient.name}</span>}
+                          {med.scheduleName && <span style={{ fontSize: '0.7rem', background: 'var(--accent-primary)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.scheduleName}</span>}
+                        </div>
                       </div>
                       {med.alias && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{med.alias}</p>}
                       <p style={{ fontSize: '0.95rem', marginTop: '0.5rem', color: med.isOverdue ? 'var(--danger)' : 'inherit', fontWeight: med.isOverdue ? 'bold' : 'normal' }}>
@@ -281,7 +288,7 @@ export default function Dashboard() {
                         {isSnoozed && <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', color: 'var(--accent-secondary)' }}>(Snoozed)</span>}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', minWidth: '140px' }}>
                       {user && isDueSoon && !isSnoozed && (
                         <button onClick={() => handleSnooze(med)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
                           💤 Snooze
@@ -289,26 +296,49 @@ export default function Dashboard() {
                       )}
                       
                       {user ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end', width: '100%' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', width: '100%' }}>
                           <button 
                             onClick={() => {
                               if (!isWithinMargin) return;
-                              setAdministeringMed(med)
+                              setAdministeringMed({ ...med, status: 'ADMINISTERED' })
                               setAdministerNotes('')
                             }}
                             className={`btn ${isWithinMargin ? 'btn-success' : ''}`} 
                             style={{ 
-                              padding: '0.75rem 1.5rem', 
+                              padding: '0.6rem 1rem', 
                               borderRadius: '24px',
                               opacity: isWithinMargin ? 1 : 0.5,
                               cursor: isWithinMargin ? 'pointer' : 'not-allowed',
                               backgroundColor: isWithinMargin ? 'var(--success)' : 'var(--bg-secondary)',
                               color: isWithinMargin ? 'white' : 'var(--text-secondary)',
-                              width: '100%'
+                              width: '100%',
+                              fontSize: '0.9rem'
                             }}
                             disabled={!isWithinMargin}
                           >
-                            {isWithinMargin ? '✓ Administer Now' : 'Not in window'}
+                            {isWithinMargin ? '✓ Administer' : 'Not in window'}
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              if (!confirm(`Skip this dose of ${med.name}?`)) return;
+                              setAdministeringMed({ ...med, status: 'SKIPPED' })
+                              setAdministerNotes('Skipped dose')
+                            }}
+                            className="btn"
+                            style={{
+                              padding: '0.6rem 1rem',
+                              borderRadius: '24px',
+                              backgroundColor: 'var(--bg-secondary)',
+                              color: 'var(--danger)',
+                              width: '100%',
+                              fontSize: '0.9rem',
+                              borderColor: 'var(--danger)',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                          >
+                            ⏭️ Skip
                           </button>
                         </div>
                       ) : (

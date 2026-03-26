@@ -14,7 +14,10 @@ export async function GET() {
           accountId: session.accountId as string
         }
       },
-      include: { patient: true },
+      include: { 
+        patient: true,
+        schedules: { orderBy: { createdAt: 'asc' } }
+      },
       orderBy: { name: 'asc' }
     })
     return NextResponse.json({ medications })
@@ -55,14 +58,21 @@ export async function POST(request: Request) {
         name: data.name,
         alias: data.alias || null,
         imageUrl: data.imageUrl || null,
-        color: data.color || null,
-        icon: data.icon || null,
-        intervalHours: data.intervalHours ? parseInt(String(data.intervalHours), 10) : null,
-        daysOfWeek: data.daysOfWeek || null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
-        patientId: data.patientId
-      }
+        patientId: data.patientId,
+        schedules: {
+          create: {
+            name: 'Primary Schedule',
+            intervalHours: data.intervalHours ? parseInt(String(data.intervalHours), 10) : null,
+            daysOfWeek: data.daysOfWeek || null,
+            startDate: data.startDate ? new Date(data.startDate) : null,
+            endDate: data.endDate ? new Date(data.endDate) : null,
+            marginMinutes: data.marginMinutes ? parseInt(String(data.marginMinutes), 10) : 30,
+            color: data.color || null,
+            icon: data.icon || null
+          }
+        }
+      },
+      include: { schedules: true }
     })
 
     return NextResponse.json({ medication })

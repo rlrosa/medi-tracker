@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json()
-    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt } = data
+    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status } = data
     
     // Verify medication belongs to the account
     const medication = await prisma.medication.findFirst({
@@ -81,6 +81,8 @@ export async function POST(request: Request) {
     const log = await prisma.administrationLog.create({
       data: {
         medicationId: String(medicationId),
+        scheduleId: scheduleId ? String(scheduleId) : null,
+        status: status === 'SKIPPED' ? 'SKIPPED' : 'ADMINISTERED',
         administeredAt: new Date(String(administeredAt)),
         scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
