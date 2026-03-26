@@ -162,11 +162,40 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Animations */
 @keyframes pulse-danger-bg {
-  0% { background-color: var(--glass-bg); }
-  50% { background-color: rgba(239, 68, 68, 0.15); }
-  100% { background-color: var(--glass-bg); }
+  0% { background: var(--glass-bg); }
+  50% { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); }
+  100% { background: var(--glass-bg); }
 }
 
 .pulse-red-bg {
-  animation: pulse-danger-bg 2.5s infinite ease-in-out;
+  animation: pulse-danger-bg 2s infinite ease-in-out;
+}
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  nav {
+    padding: 0.75rem 1rem !important;
+    gap: 0.5rem;
+  }
+
+  nav .btn {
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .glass-panel {
+    padding: 1rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
 }

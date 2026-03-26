@@ -5,39 +5,61 @@ import { createSession } from '@/lib/session'
 
 export async function POST(request: Request) {
   try {
-    const { username, password, name } = await request.json()
+    const { email, password, name, accountName, accountType } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
+    if (!email || !password || !accountName) {
+      return NextResponse.json({ error: 'Email, password, and account name are required' }, { status: 400 })
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { username },
+      where: { email },
     })
 
     if (existingUser) {
-      return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
+      return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
     }
-
-    // Default first user to ADMIN
-    const userCount = await prisma.user.count()
-    const role = userCount === 0 ? 'ADMIN' : 'USER'
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const user = await prisma.user.create({
-      data: {
-        username,
-        passwordHash,
-        name: name || '',
-        role,
-      },
+    // Create Account and User in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const account = await tx.account.create({
+        data: {
+          name: accountName,
+          type: accountType || 'SOLO',
+        },
+      })
+
+      const user = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          name: name || '',
+          role: 'ADMIN',
+          accountId: account.id,
+        },
+      })
+
+      // If Solo mode, create a "Self" patient
+      if (account.type === 'SOLO') {
+        await tx.patient.create({
+          data: {
+            name: name || 'Self',
+            selfMedication: true,
+            accountId: account.id,
+            userId: user.id
+          },
+        })
+      }
+
+      return { user, account }
     })
 
-    await createSession(user.id, user.role)
+    await createSession(result.user.id, result.account.id, result.user.role)
 
     return NextResponse.json({
-      user: { id: user.id, username: user.username, name: user.name, role: user.role }
+      user: { id: result.user.id, email: result.user.email, name: result.user.name, role: result.user.role },
+      account: { id: result.account.id, name: result.account.name, type: result.account.type }
     })
   } catch (error) {
     console.error('Registration error', error)

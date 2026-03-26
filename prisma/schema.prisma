@@ -7,49 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id          String       @id @default(cuid())
+  name        String
+  type        String       @default("SOLO")
+  createdAt   DateTime     @default(now())
+  invitations Invitation[]
+  patients    Patient[]
+  users       User[]
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  username      String    @unique
-  passwordHash  String
-  role          String    @default("USER") // 'ADMIN' or 'USER'
-  logs          AdministrationLog[]
-  createdAt     DateTime  @default(now())
+  id           String              @id @default(cuid())
+  name         String?
+  username     String?             @unique
+  passwordHash String
+  role         String              @default("USER")
+  createdAt    DateTime            @default(now())
+  accountId    String?
+  email        String?             @unique
+  logs         AdministrationLog[]
+  patients     Patient[]
+  account      Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id         String    @id @default(cuid())
+  email      String
+  role       String    @default("CAREGIVER")
+  token      String    @unique
+  accountId  String?
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  account    Account?  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model Patient {
+  id             String       @id @default(cuid())
+  name           String
+  selfMedication Boolean      @default(false)
+  accountId      String?
+  userId         String?
+  createdAt      DateTime     @default(now())
+  medications    Medication[]
+  account        Account?     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id])
 }
 
 model Medication {
-  id            String    @id @default(cuid())
+  id            String              @id @default(cuid())
   name          String
   alias         String?
   imageUrl      String?
-  
-  // Schedule
   intervalHours Int?
-  marginMinutes Int      @default(30)
-  daysOfWeek    String?   // e.g. "1,3,5" for Mon/Wed/Fri
+  daysOfWeek    String?
   startDate     DateTime?
   endDate       DateTime?
-
+  createdAt     DateTime            @default(now())
+  marginMinutes Int                 @default(30)
+  color         String?
+  icon          String?
+  patientId     String?
   logs          AdministrationLog[]
-  createdAt     DateTime  @default(now())
+  patient       Patient?            @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 model AdministrationLog {
-  id                   String      @id @default(cuid())
+  id                   String     @id @default(cuid())
   medicationId         String
-  medication           Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
-  
   administeredAt       DateTime
-  scheduledAt          DateTime?
-  
   administeredByUserId String?
-  administeredByUser   User?       @relation(fields: [administeredByUserId], references: [id], onDelete: SetNull)
-  
   notes                String?
-  createdAt            DateTime    @default(now())
+  createdAt            DateTime   @default(now())
+  scheduledAt          DateTime?
+  administeredByUser   User?      @relation(fields: [administeredByUserId], references: [id])
+  medication           Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
 }
 
 model Setting {
   key   String @id
   value String
+}
+
+model MedicationTemplate {
+  id            String  @id @default(cuid())
+  name          String
+  intervalHours Int?
+  marginMinutes Int     @default(30)
+  daysOfWeek    String?
+  color         String?
+  icon          String?
 }

@@ -4,18 +4,20 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     })
 
     if (res.ok) {
@@ -25,23 +27,26 @@ export default function LoginPage() {
       const data = await res.json()
       setError(data.error || 'Login failed')
     }
+    setLoading(false)
   }
 
   return (
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Welcome to MediTracker</h2>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+        <img src="/logo.png" alt="MediTracker" style={{ width: '80px', height: '80px', marginBottom: '1rem', objectFit: 'contain' }} />
+        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>MediTracker</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Sign in to your account</p>
         
         {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
         
         <form onSubmit={handleLogin} className="flex-col" style={{ gap: '1rem', display: 'flex' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Username</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email or Username</label>
             <input 
               type="text" 
               className="input-field" 
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               required 
             />
           </div>
@@ -55,8 +60,8 @@ export default function LoginPage() {
               required 
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
-            Login
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

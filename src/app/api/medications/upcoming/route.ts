@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getSession } from '@/lib/session'
 
 export async function GET(request: Request) {
   try {
+    const session = await getSession()
+    if (!session || !session.accountId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const url = new URL(request.url)
     const hoursStr = url.searchParams.get('hours') || '24' 
     const hours = parseInt(hoursStr, 10)
@@ -11,7 +17,13 @@ export async function GET(request: Request) {
     const futureLimit = new Date(now.getTime() + hours * 60 * 60 * 1000)
 
     const medications = await prisma.medication.findMany({
+      where: {
+        patient: {
+          accountId: session.accountId as string
+        }
+      },
       include: {
+        patient: true,
         logs: {
           orderBy: { administeredAt: 'desc' },
           take: 1

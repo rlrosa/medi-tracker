@@ -1,11 +1,14 @@
 'use client'
-import { useEffect, useState, useRef, use } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Navigation } from '@/components/Navigation'
 import { useSettings } from '@/components/ThemeProvider'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import * as Icons from 'lucide-react'
 
 
 export default function Dashboard() {
+  const router = useRouter()
   const { muteAudio } = useSettings()
   const [user, setUser] = useState<any>(null)
   const [upcoming, setUpcoming] = useState<any[]>([])
@@ -25,23 +28,36 @@ export default function Dashboard() {
   const [needsPermission, setNeedsPermission] = useState(false)
   
   const [dbError, setDbError] = useState<string | null>(null)
+  const [administeringMed, setAdministeringMed] = useState<any>(null)
+  const [administerNotes, setAdministerNotes] = useState('')
+  const [administerLoading, setAdministerLoading] = useState(false)
+  const [accountUsers, setAccountUsers] = useState<any[]>([])
+  const [selectedCaregiverId, setSelectedCaregiverId] = useState('')
 
   const fetchData = async () => {
     try {
-      const [meRes, upcomingRes, recentRes] = await Promise.all([
+      const [meRes, upcomingRes, recentRes, usersRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch('/api/medications/upcoming?hours=24'),
-        fetch('/api/logs/recent')
+        fetch('/api/logs/recent'),
+        fetch('/api/users')
       ])
       
-      if (!upcomingRes.ok || !recentRes.ok || !meRes.ok) {
-        setDbError('Cannot reach the database. Please check your network connection.')
+      if (!meRes.ok) {
+        setDbError('Cannot reach the authentication service. Please check your network connection.')
+      } else if (upcomingRes.status >= 500 || recentRes.status >= 500 || usersRes.status >= 500) {
+        setDbError('Database error. Our server is having trouble reaching the data store.')
       } else {
         setDbError(null)
       }
       
       const meData = await meRes.json()
+      if (!meData.user) {
+        router.push('/login')
+        return
+      }
       setUser(meData.user)
+      setSelectedCaregiverId(meData.user.id)
       
       if (upcomingRes.ok) {
         const uData = await upcomingRes.json()
@@ -52,6 +68,11 @@ export default function Dashboard() {
       if (recentRes.ok) {
         const rData = await recentRes.json()
         setRecent(rData.logs || [])
+      }
+
+      if (usersRes.ok) {
+        const uData = await usersRes.json()
+        setAccountUsers(uData.users || [])
       }
     } catch (err) {
       console.error(err)
@@ -145,15 +166,17 @@ export default function Dashboard() {
     }
   }
 
-  const handleAdminister = async (id: string, notes: string = '', scheduledAt?: string) => {
-    if (!user) return alert('Must be logged in')
+  const handleAdminister = async () => {
+    if (!user || !administeringMed) return
+    setAdministerLoading(true)
     try {
       const payload: any = {
-        medicationId: id,
-        administeredAt: new Date().toISOString()
+        medicationId: administeringMed.id,
+        administeredAt: new Date().toISOString(),
+        administeredByUserId: selectedCaregiverId
       };
-      if (scheduledAt) payload.scheduledAt = scheduledAt;
-      if (notes) payload.notes = notes;
+      if (administeringMed.nextDue) payload.scheduledAt = administeringMed.nextDue;
+      if (administerNotes) payload.notes = administerNotes;
       
       const res = await fetch('/api/logs', {
         method: 'POST',
@@ -161,7 +184,8 @@ export default function Dashboard() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
-        setNotes(prev => ({ ...prev, [id]: '' }))
+        setAdministeringMed(null)
+        setAdministerNotes('')
         fetchData()
       } else {
         console.error('Failed to administer medication:', res.status, await res.text());
@@ -170,6 +194,8 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error administering medication:', error);
       alert('An error occurred while administering medication.');
+    } finally {
+      setAdministerLoading(false)
     }
   }
 
@@ -179,8 +205,10 @@ export default function Dashboard() {
     fetchData()
   }
 
-  const handleSnooze = (medId: string) => {
-    snoozedUntil.current[medId] = Date.now() + 30 * 60 * 1000 // 30 mins
+  const handleSnooze = (med: any) => {
+    const marginMin = med.marginMinutes || 30
+    const snoozeMin = Math.max(1, Math.floor(marginMin / 3))
+    snoozedUntil.current[med.id] = Date.now() + snoozeMin * 60 * 1000
     setSnoozeTrigger(snoozeTrigger + 1)
   }
 
@@ -210,7 +238,7 @@ export default function Dashboard() {
       {loading ? (
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>Loading...</div>
       ) : (
-        <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+        <div className="grid dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
           <div className="flex-col" style={{ gap: '1.5rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
               Upcoming Medications (24h)
@@ -231,11 +259,21 @@ export default function Dashboard() {
 
                 return (
                   <div key={med.instanceId || med.id} className={`glass-panel ${med.isOverdue ? 'pulse-red-bg' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderLeft: med.isOverdue ? '4px solid var(--danger)' : '1px solid var(--glass-border)' }}>
-                    {med.imageUrl && (
-                      <img src={med.imageUrl} alt={med.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} />
-                    )}
+                    <div style={{ width: '60px', height: '60px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: med.color || 'var(--bg-secondary)', borderRadius: '12px', color: 'white' }}>
+                      {med.imageUrl ? (
+                        <img src={med.imageUrl} alt={med.name} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                      ) : (
+                        (() => {
+                          const LucideIcon = (Icons as any)[med.icon || 'Pill'] || Icons.Pill || (Icons as any).Activity
+                          return LucideIcon ? <LucideIcon size={32} /> : <span>📦</span>
+                        })()
+                      )}
+                    </div>
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{med.name}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <h3 style={{ fontSize: '1.25rem' }}>{med.name}</h3>
+                        {med.patient && <span style={{ fontSize: '0.75rem', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.patient.name}</span>}
+                      </div>
                       {med.alias && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{med.alias}</p>}
                       <p style={{ fontSize: '0.95rem', marginTop: '0.5rem', color: med.isOverdue ? 'var(--danger)' : 'inherit', fontWeight: med.isOverdue ? 'bold' : 'normal' }}>
                         {med.isOverdue ? '⚠️ Overdue since ' : '🕒 Due at '}
@@ -245,8 +283,8 @@ export default function Dashboard() {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                       {user && isDueSoon && !isSnoozed && (
-                        <button onClick={() => handleSnooze(med.id)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
-                          💤 Snooze 30m
+                        <button onClick={() => handleSnooze(med)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                          💤 Snooze
                         </button>
                       )}
                       
@@ -255,10 +293,8 @@ export default function Dashboard() {
                           <button 
                             onClick={() => {
                               if (!isWithinMargin) return;
-                              const notes = prompt('Add optional notes (e.g. dosage) or leave blank:')
-                              if (notes !== null) {
-                                handleAdminister(med.id, notes, med.nextDue)
-                              }
+                              setAdministeringMed(med)
+                              setAdministerNotes('')
                             }}
                             className={`btn ${isWithinMargin ? 'btn-success' : ''}`} 
                             style={{ 
@@ -308,7 +344,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>By: {log.administeredByUser?.name || log.administeredByUser?.username || 'Unknown'}</span>
+                      <span>By: {log.administeredByUser?.name || log.administeredByUser?.email?.split('@')[0] || 'Unknown'}</span>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         {log.notes && <span style={{ fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0 0.3rem', borderRadius: '4px' }}>Note: {log.notes}</span>}
                         {(user?.role === 'ADMIN' || user?.id === log.administeredByUserId) && (
@@ -318,6 +354,64 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {administeringMed && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Confirm Administration</h3>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+              Are you sure you want to log <strong>{administeringMed.name}</strong> for <strong>{administeringMed.patient?.name}</strong>?
+            </p>
+
+            <div className="flex-col" style={{ gap: '1rem' }}>
+              {accountUsers.length > 0 && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Administered By</label>
+                  <select 
+                    className="input-field" 
+                    value={selectedCaregiverId} 
+                    onChange={e => setSelectedCaregiverId(e.target.value)}
+                  >
+                    {accountUsers.map(u => (
+                      <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Notes (Optional)</label>
+                <textarea 
+                  className="input-field" 
+                  rows={3} 
+                  placeholder="e.g. Dosage, reaction..." 
+                  value={administerNotes}
+                  onChange={e => setAdministerNotes(e.target.value)}
+                  style={{ resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <button 
+                  className="btn" 
+                  onClick={() => setAdministeringMed(null)}
+                  style={{ flex: 1, background: 'var(--bg-secondary)' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn btn-success" 
+                  onClick={handleAdminister}
+                  style={{ flex: 2 }}
+                  disabled={administerLoading}
+                >
+                  {administerLoading ? 'Saving...' : 'Confirm'}
+                </button>
               </div>
             </div>
           </div>
