@@ -86,12 +86,16 @@ export async function GET(request: Request) {
 
           if (isDayIncluded && currentDue >= startDate) {
             upcoming.push({
-              ...med,
+              id: med.id,
+              name: med.name,
+              alias: med.alias,
+              imageUrl: med.imageUrl,
+              patient: med.patient,
               scheduleName: schedule.name,
               scheduleId: schedule.id,
-              color: schedule.color || med.color,
-              icon: schedule.icon || med.icon,
-              marginMinutes: schedule.marginMinutes,
+              color: schedule.color || '#6366f1',
+              icon: schedule.icon || 'Pill',
+              marginMinutes: schedule.marginMinutes || 30,
               nextDue: new Date(currentDue),
               isOverdue: currentDue < now,
               instanceId: `${med.id}-${schedule.id}-${currentDue.getTime()}`

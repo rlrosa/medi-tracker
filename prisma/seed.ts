@@ -57,22 +57,32 @@ async function main() {
     data: {
       name: 'Aspirin',
       alias: 'Heart Med',
-      intervalHours: 12,
-      marginMinutes: 60,
-      color: '#f87171',
-      icon: 'Pill',
       patientId: grandma.id,
+      schedules: {
+        create: {
+          name: 'Morning & Evening',
+          intervalHours: 12,
+          marginMinutes: 60,
+          color: '#f87171',
+          icon: 'Pill',
+        }
+      }
     },
   })
 
   await prisma.medication.create({
     data: {
       name: 'Vitamin D',
-      intervalHours: 24,
-      marginMinutes: 120,
-      color: '#fbbf24',
-      icon: 'Sun',
       patientId: selfPatient.id,
+      schedules: {
+        create: {
+          name: 'Daily Morning',
+          intervalHours: 24,
+          marginMinutes: 120,
+          color: '#fbbf24',
+          icon: 'Sun',
+        }
+      }
     },
   })
 

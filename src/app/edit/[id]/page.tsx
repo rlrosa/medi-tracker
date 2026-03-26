@@ -163,8 +163,8 @@ export default function EditMedication() {
             {schedules.map((s, sIdx) => {
               const currentDays = s.daysOfWeek ? s.daysOfWeek.split(',').map(Number) : []
               const toggleDay = (day: number) => {
-                const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day]
-                updateSchedule(sIdx, { daysOfWeek: newDays.sort((a,b) => a-b).join(',') })
+                const newDays = currentDays.includes(day) ? currentDays.filter((d: number) => d !== day) : [...currentDays, day]
+                updateSchedule(sIdx, { daysOfWeek: newDays.sort((a: number, b: number) => a - b).join(',') })
               }
 
               return (
