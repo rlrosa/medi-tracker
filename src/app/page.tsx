@@ -16,13 +16,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [notes, setNotes] = useState<Record<string, string>>({})
   
-  const lastNotifiedAt = useRef<Record<string, number>>({})
   const snoozedUntil = useRef<Record<string, number>>({})
   // We need state to trigger re-renders for snoozed buttons
   const [snoozeTrigger, setSnoozeTrigger] = useState(0)
   
-  // Add a visible in-app toast for notification fallback
-  const [activeToast, setActiveToast] = useState<string | null>(null)
+  
   
   // Track if we need explicit gesture for Android permissions
   const [needsPermission, setNeedsPermission] = useState(false)
@@ -64,7 +62,6 @@ export default function Dashboard() {
       if (upcomingRes.ok) {
         const uData = await upcomingRes.json()
         setUpcoming(uData.upcoming || [])
-        checkNotifications(uData.upcoming || [])
       }
       
       if (recentRes.ok) {
@@ -115,59 +112,7 @@ export default function Dashboard() {
     } catch(e) {}
   }
 
-  const checkNotifications = (meds: any[]) => {
-    const now = Date.now()
-    meds.forEach(med => {
-      const dueTime = new Date(med.nextDue).getTime()
-      if (med.isOverdue || (dueTime - now < 10 * 60 * 1000)) {
-        
-        const isSnoozed = snoozedUntil.current[med.id] && snoozedUntil.current[med.id] > now
-        const hasNotifiedRecently = lastNotifiedAt.current[med.id] && (now - lastNotifiedAt.current[med.id] < 5 * 60 * 1000)
-        
-        if (!isSnoozed && !hasNotifiedRecently) {
-          triggerNotification(med)
-          lastNotifiedAt.current[med.id] = now
-        }
-      }
-    })
-  }
-
-  const triggerNotification = (med: any) => {
-    // Show in-app visual toast to guarantee we see logic triggering
-    setActiveToast(`Notification: It is time to take ${med.name}!`)
-    setTimeout(() => setActiveToast(null), 5000)
-
-    if (!muteAudio) {
-      try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-        
-        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-      } catch(e) { console.log('Audio beep ignored by browser restriction') }
-    }
-    
-    // Attempt standard OS notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification('Medication Due!', {
-          body: `It is time to take ${med.name}`,
-          icon: med.imageUrl || undefined
-        })
-      } catch(e) { console.log('OS notification blocked.') }
-    }
-  }
-
+  
   const handleAdminister = async () => {
     if (!user || !administeringMed) return
     setAdministerLoading(true)
@@ -628,17 +573,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {activeToast && (
-        <div style={{
-          position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999,
-          background: 'var(--accent-primary)', color: 'white',
-          padding: '1rem 1.5rem', borderRadius: '8px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-          fontWeight: 'bold', animation: 'fadeIn 0.3s ease-out'
-        }}>
-          🔔 {activeToast}
-        </div>
-      )}
     </main>
   )
 }
