@@ -1,0 +1,485 @@
+{
+  "Account": [
+    {
+      "id": "cmn75kwb80000qyel999z7gdv",
+      "name": "Rodri & Mari Account",
+      "type": "COORDINATOR",
+      "createdAt": "2026-03-26T07:30:40.149Z"
+    }
+  ],
+  "User": [
+    {
+      "id": "cmn7ygh820001qy644ji55u81",
+      "name": "rr",
+      "username": "rr",
+      "passwordHash": "$2b$10$pSTj/q4sepPTBZ61IDYjge3iCMlLybGTiHTtt2cnm12N.19noLNc2",
+      "role": "ADMIN",
+      "createdAt": "2026-03-26T20:59:02.834Z",
+      "accountId": "cmn75kwb80000qyel999z7gdv",
+      "email": null
+    },
+    {
+      "id": "cmn7ygi5n0003qy64hjz8gapc",
+      "name": "mari",
+      "username": "mari",
+      "passwordHash": "$2b$10$pSTj/q4sepPTBZ61IDYjge3iCMlLybGTiHTtt2cnm12N.19noLNc2",
+      "role": "USER",
+      "createdAt": "2026-03-26T20:59:04.043Z",
+      "accountId": "cmn75kwb80000qyel999z7gdv",
+      "email": null
+    }
+  ],
+  "Patient": [
+    {
+      "id": "cmn75kwle0002qyelcod0oui2",
+      "name": "gabi",
+      "selfMedication": false,
+      "accountId": "cmn75kwb80000qyel999z7gdv",
+      "userId": null,
+      "createdAt": "2026-03-26T07:30:40.515Z"
+    }
+  ],
+  "Medication": [
+    {
+      "id": "cmn6wojd60000jv04rbgj5is6",
+      "name": "Colace",
+      "alias": "Stool softener",
+      "imageUrl": null,
+      "createdAt": "2026-03-26T03:21:33.450Z",
+      "patientId": "cmn75kwle0002qyelcod0oui2"
+    },
+    {
+      "id": "cmn66l8bk0005qybtcxozs8ja",
+      "name": "Methocarbamol",
+      "alias": "Muscle relaxant (robaxin)",
+      "imageUrl": null,
+      "createdAt": "2026-03-25T15:11:09.084Z",
+      "patientId": "cmn75kwle0002qyelcod0oui2"
+    },
+    {
+      "id": "cmn65y5qd0001qybtm572jc7u",
+      "name": "Percocet",
+      "alias": "Opiode - Pain",
+      "imageUrl": null,
+      "createdAt": "2026-03-25T14:53:12.639Z",
+      "patientId": "cmn75kwle0002qyelcod0oui2"
+    },
+    {
+      "id": "cmn6wqu840001jv045b6gjay7",
+      "name": "Ondansetron",
+      "alias": "antivomito",
+      "imageUrl": null,
+      "createdAt": "2026-03-26T03:23:20.834Z",
+      "patientId": "cmn75kwle0002qyelcod0oui2"
+    },
+    {
+      "id": "cmn66iyzz0004qybtj1rvissi",
+      "name": "Meloxicam",
+      "alias": "antinflamatory",
+      "imageUrl": null,
+      "createdAt": "2026-03-25T15:09:23.688Z",
+      "patientId": "cmn75kwle0002qyelcod0oui2"
+    }
+  ],
+  "MedicationSchedule": [
+    {
+      "id": "cmn7wva210005qyedzgve8hvw",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "name": "Default Schedule",
+      "intervalHours": 8,
+      "daysOfWeek": "0,1,2,3,4,5,6",
+      "startDate": "2026-03-25T15:00:00.000Z",
+      "endDate": "2026-04-02T01:48:00.000Z",
+      "marginMinutes": 15,
+      "color": "#6366f1",
+      "icon": "Sun",
+      "createdAt": "2026-03-26T20:14:34.153Z"
+    },
+    {
+      "id": "cmn7wvdfp0009qyedhkm74jtb",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "name": "Default Schedule",
+      "intervalHours": 4,
+      "daysOfWeek": "0,1,2,3,4,5,6",
+      "startDate": "2026-03-25T13:00:00.000Z",
+      "endDate": "2026-04-02T01:46:00.000Z",
+      "marginMinutes": 15,
+      "color": "#10b981",
+      "icon": "Biohazard",
+      "createdAt": "2026-03-26T20:14:38.533Z"
+    },
+    {
+      "id": "cmn7wv8j50003qyedmw3qsg7h",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "name": "Default Schedule",
+      "intervalHours": 6,
+      "daysOfWeek": "0,1,2,3,4,5,6",
+      "startDate": "2026-03-26T01:00:00.000Z",
+      "endDate": "2026-04-02T01:52:00.000Z",
+      "marginMinutes": 30,
+      "color": "#6366f1",
+      "icon": "Pill",
+      "createdAt": "2026-03-26T20:14:32.178Z"
+    },
+    {
+      "id": "cmn7wvc130007qyedga4a9hpl",
+      "medicationId": "cmn66iyzz0004qybtj1rvissi",
+      "name": "Default Schedule",
+      "intervalHours": 24,
+      "daysOfWeek": "0,1,2,3,4,5,6",
+      "startDate": "2026-03-26T18:00:00.000Z",
+      "endDate": "2026-04-10T01:54:00.000Z",
+      "marginMinutes": 15,
+      "color": "#d946ef",
+      "icon": "HandMetal",
+      "createdAt": "2026-03-26T20:14:36.711Z"
+    },
+    {
+      "id": "cmn7wv6bd0001qyed1nive2fp",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "name": "Default Schedule",
+      "intervalHours": 8,
+      "daysOfWeek": "0,1,2,3,4,5,6",
+      "startDate": "2026-03-26T03:00:00.000Z",
+      "endDate": "2026-03-27T04:04:00.000Z",
+      "marginMinutes": 30,
+      "color": "#06b6d4",
+      "icon": "Milk",
+      "createdAt": "2026-03-26T20:14:29.306Z"
+    },
+    {
+      "id": "cmn8doc0f000hqy5w8tcz8s6x",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "name": "shit-pain",
+      "intervalHours": 4,
+      "daysOfWeek": null,
+      "startDate": "2026-03-27T05:00:00.000Z",
+      "endDate": "2026-04-02T04:04:00.000Z",
+      "marginMinutes": 15,
+      "color": "#06b6d4",
+      "icon": "Milk",
+      "createdAt": "2026-03-27T04:05:03.567Z"
+    }
+  ],
+  "AdministrationLog": [
+    {
+      "id": "cmn670gtp0002qyfd8n3s0btd",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "scheduleId": "cmn7wva210005qyedzgve8hvw",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-25T15:00:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "",
+      "createdAt": "2026-03-25T15:22:59.946Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn6wopzl0001l504rt3kg5bq",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "scheduleId": "cmn7wv6bd0001qyed1nive2fp",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T03:21:41.962Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1",
+      "createdAt": "2026-03-26T03:21:42.031Z",
+      "scheduledAt": "2026-03-26T03:00:00.000Z"
+    },
+    {
+      "id": "cmn6wrd9p0001kw04bvw1oz6c",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "scheduleId": "cmn7wv8j50003qyedmw3qsg7h",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T01:05:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-26T03:23:45.516Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn733a970001l5041dwvh735",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "scheduleId": "cmn7wv8j50003qyedmw3qsg7h",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T05:50:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-26T06:20:59.177Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn74ohhn0001js046qd9co26",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "scheduleId": "cmn7wv6bd0001qyed1nive2fp",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T10:20:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1, by mari",
+      "createdAt": "2026-03-26T07:05:27.945Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7hmfw10001l104cn87wcby",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "scheduleId": "cmn7wv8j50003qyedmw3qsg7h",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T13:07:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1",
+      "createdAt": "2026-03-26T13:07:47.569Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7s4w8q0001i504nq3ttr8n",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "scheduleId": "cmn7wv6bd0001qyed1nive2fp",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T18:02:03.799Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1",
+      "createdAt": "2026-03-26T18:02:04.731Z",
+      "scheduledAt": "2026-03-26T18:20:00.000Z"
+    },
+    {
+      "id": "cmn7ujn310001ky048hfncei3",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "scheduleId": "cmn7wv8j50003qyedmw3qsg7h",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T19:09:31.473Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "X1",
+      "createdAt": "2026-03-26T19:09:31.933Z",
+      "scheduledAt": "2026-03-26T19:07:00.000Z"
+    },
+    {
+      "id": "cmn66fx4i0003qybtc4vvi5bm",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-25T13:00:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x2",
+      "createdAt": "2026-03-25T15:07:00.899Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn6aqvtt0001qy9hgk37w02f",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-25T17:07:30.661Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "2",
+      "createdAt": "2026-03-25T17:07:31.290Z",
+      "scheduledAt": "2026-03-25T17:00:00.000Z"
+    },
+    {
+      "id": "cmn6k82mc0003qy9hrh837uko",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-25T21:10:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x2",
+      "createdAt": "2026-03-25T21:32:49.398Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn6ntq4l0001jp04uwmv2ufv",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "scheduleId": "cmn7wva210005qyedzgve8hvw",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-25T23:13:38.674Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": null,
+      "createdAt": "2026-03-25T23:13:38.926Z",
+      "scheduledAt": "2026-03-25T23:00:00.000Z"
+    },
+    {
+      "id": "cmn6wcz360001l7045ysr2uqf",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T01:34:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x2",
+      "createdAt": "2026-03-26T03:12:33.954Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn72ykx80001jm04290vrx07",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T06:00:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x2",
+      "createdAt": "2026-03-26T06:17:19.721Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn757tgq0001kw04g3cjd1cy",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "scheduleId": "cmn7wva210005qyedzgve8hvw",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T07:20:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-26T07:20:29.927Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7bpux00001lh048emrboak",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T10:21:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x2",
+      "createdAt": "2026-03-26T10:22:29.316Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7mcwyl0001jr04qdjkh7gy",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T15:20:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x2",
+      "createdAt": "2026-03-26T15:20:21.213Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7osyon0001jr04ihiospft",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "scheduleId": "cmn7wva210005qyedzgve8hvw",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T16:28:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": null,
+      "createdAt": "2026-03-26T16:28:49.176Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn7s51al0001kt0403qlr7in",
+      "medicationId": "cmn66iyzz0004qybtj1rvissi",
+      "scheduleId": "cmn7wvc130007qyedga4a9hpl",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T18:02:10.391Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1",
+      "createdAt": "2026-03-26T18:02:11.277Z",
+      "scheduledAt": "2026-03-26T18:00:00.000Z"
+    },
+    {
+      "id": "cmn7voifs0001l104xrbd1fo0",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T19:41:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-26T19:41:18.808Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn865ury0001jr04t46l6z4t",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": null,
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-26T23:38:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-27T00:34:44.111Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn86nqku0001l204qihchnfx",
+      "medicationId": "cmn66l8bk0005qybtcxozs8ja",
+      "scheduleId": null,
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-27T00:48:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": "x1",
+      "createdAt": "2026-03-27T00:48:38.479Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn89dvl60001l504e1r26n9q",
+      "medicationId": "cmn6wqu840001jv045b6gjay7",
+      "scheduleId": null,
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-27T02:04:00.000Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "Overdue dose",
+      "createdAt": "2026-03-27T02:04:57.259Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn8b7zoz0004qy5wrnyxqk1j",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "scheduleId": null,
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-27T02:55:00.000Z",
+      "administeredByUserId": "cmn7ygi5n0003qy64hjz8gapc",
+      "notes": null,
+      "createdAt": "2026-03-27T02:56:21.876Z",
+      "scheduledAt": null
+    },
+    {
+      "id": "cmn8ejs9t000tqy5wvo7x9v3f",
+      "medicationId": "cmn6wojd60000jv04rbgj5is6",
+      "scheduleId": "cmn8doc0f000hqy5w8tcz8s6x",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-27T04:29:30.418Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": null,
+      "createdAt": "2026-03-27T04:29:30.978Z",
+      "scheduledAt": "2026-03-27T05:00:00.000Z"
+    },
+    {
+      "id": "cmn8ejyzz000vqy5wopvhfxea",
+      "medicationId": "cmn65y5qd0001qybtm572jc7u",
+      "scheduleId": "cmn7wvdfp0009qyedhkm74jtb",
+      "status": "ADMINISTERED",
+      "administeredAt": "2026-03-27T04:29:39.550Z",
+      "administeredByUserId": "cmn7ygh820001qy644ji55u81",
+      "notes": "x1",
+      "createdAt": "2026-03-27T04:29:39.695Z",
+      "scheduledAt": "2026-03-27T05:00:00.000Z"
+    }
+  ],
+  "Invitation": [
+    {
+      "id": "cmn76n4a70001qyhby12l6tw5",
+      "email": "test@example.com",
+      "role": "CAREGIVER",
+      "token": "5f7bf140-7674-4d65-8dbb-e79cc0767830",
+      "accountId": "cmn75kwb80000qyel999z7gdv",
+      "expiresAt": "2026-04-02T08:00:23.338Z",
+      "acceptedAt": null,
+      "createdAt": "2026-03-26T08:00:23.339Z"
+    }
+  ],
+  "Setting": [],
+  "MedicationTemplate": [
+    {
+      "id": "cmn7xaj0n000fqylfig2xrx0h",
+      "name": "Daily Morning",
+      "intervalHours": 24,
+      "marginMinutes": 60,
+      "daysOfWeek": null,
+      "color": "#60a5fa",
+      "icon": "Sunrise"
+    },
+    {
+      "id": "cmn7xaj0n000gqylfzligqvkk",
+      "name": "Twice Daily",
+      "intervalHours": 12,
+      "marginMinutes": 30,
+      "daysOfWeek": null,
+      "color": "#34d399",
+      "icon": "Clock"
+    }
+  ]
+}

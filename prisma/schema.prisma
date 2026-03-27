@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -29,6 +29,17 @@ model User {
   logs         AdministrationLog[]
   patients     Patient[]
   account      Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  defaultMovePreference String    @default("ASK") // "ASK" | "SINGLE" | "OFFSET"
+}
+
+model MedicationEventHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  actionType   String   // MOVE, DELETE, ADMINISTER
+  description  String?
+  undoData     String   // JSON string containing inverse action parameters
+  timestamp    DateTime @default(now())
 }
 
 model Invitation {
@@ -66,6 +77,7 @@ model Medication {
 
   schedules MedicationSchedule[]
   logs      AdministrationLog[]
+  events    MedicationEvent[]
 }
 
 model MedicationSchedule {
@@ -82,6 +94,22 @@ model MedicationSchedule {
   icon          String?
   createdAt     DateTime            @default(now())
   logs          AdministrationLog[]
+  events        MedicationEvent[]
+}
+
+model MedicationEvent {
+  id           String             @id @default(cuid())
+  scheduleId   String
+  schedule     MedicationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  medicationId String
+  medication   Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  
+  time         DateTime           // Current planned time
+  originalTime DateTime?          // Anchor time (optional if not shifted)
+  status       String             @default("PENDING") // PENDING, COMPLETED, SKIPPED, MISSED
+  
+  log          AdministrationLog? @relation("EventToLog")
+  createdAt    DateTime           @default(now())
 }
 
 model AdministrationLog {
@@ -97,6 +125,9 @@ model AdministrationLog {
   administeredByUser   User?      @relation(fields: [administeredByUserId], references: [id])
   medication           Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   schedule             MedicationSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  
+  eventId              String?             @unique
+  event                MedicationEvent?    @relation("EventToLog", fields: [eventId], references: [id])
 }
 
 model Setting {

@@ -221,3 +221,56 @@ select.input-field option {
 .hover-subtle:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* Calendar Animations & UX */
+@keyframes pulse-aura {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.pulse-aura {
+  animation: pulse-aura 1.5s ease-out;
+  border-radius: 12px;
+}
+
+.draggable-event:active {
+  opacity: 0.9 !important;
+  transform: scale(1.02);
+  cursor: grabbing;
+}
+
+.time-badge {
+  background: var(--accent-primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.5);
+  border: 1px solid rgba(255,255,255,0.3);
+  z-index: 100;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.undo-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  z-index: 100000;
+  animation: slide-up 0.3s ease-out;
+  backdrop-filter: blur(12px);
+  max-width: 400px;
+}

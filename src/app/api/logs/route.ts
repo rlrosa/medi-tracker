@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json()
-    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status } = data
+    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status, eventId } = data
     
     // Verify medication belongs to the account
     const medication = await prisma.medication.findFirst({
@@ -102,9 +102,19 @@ export async function POST(request: Request) {
         administeredAt: new Date(String(administeredAt)),
         scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
-        notes: typeof notes === 'string' && notes ? notes : null
+        notes: typeof notes === 'string' && notes ? notes : null,
+        eventId: eventId || null
       }
     })
+
+    if (eventId) {
+      await prisma.medicationEvent.update({
+        where: { id: eventId },
+        data: {
+          status: status === 'SKIPPED' ? 'SKIPPED' : 'COMPLETED'
+        }
+      })
+    }
 
     return NextResponse.json({ log })
   } catch (error) {

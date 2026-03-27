@@ -10,9 +10,12 @@ export function Navigation() {
   const [user, setUser] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [use24h, setUse24h] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
+  const [hasMounted, setHasMounted] = useState(false)
 
   useEffect(() => {
+    setHasMounted(true)
+    setCurrentTime(new Date())
     fetch('/api/auth/me').then(res => res.json()).then(data => setUser(data.user))
     
     // Check local storage for time preference
@@ -85,7 +88,7 @@ export function Navigation() {
           }}
           title="Click to toggle 12h/24h"
         >
-          {formatTime(currentTime)}
+          {hasMounted && currentTime ? formatTime(currentTime) : '--:--'}
         </div>
       </div>
       
