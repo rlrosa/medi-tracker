@@ -306,27 +306,53 @@ export default function Dashboard() {
                       
                       {user ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', width: '100%' }}>
-                          <button 
-                            onClick={() => {
-                              if (!isWithinMargin) return;
-                              setAdministeringMed({ ...med, status: 'ADMINISTERED' })
-                              setAdministerNotes('')
-                            }}
-                            className={`btn ${isWithinMargin ? 'btn-success' : ''}`} 
-                            style={{ 
-                              padding: '0.6rem 1rem', 
-                              borderRadius: '24px',
-                              opacity: isWithinMargin ? 1 : 0.5,
-                              cursor: isWithinMargin ? 'pointer' : 'not-allowed',
-                              backgroundColor: isWithinMargin ? 'var(--success)' : 'var(--bg-secondary)',
-                              color: isWithinMargin ? 'white' : 'var(--text-secondary)',
-                              width: '100%',
-                              fontSize: '0.9rem'
-                            }}
-                            disabled={!isWithinMargin}
-                          >
-                            {isWithinMargin ? '✓ Administer' : 'Not in window'}
-                          </button>
+                          {med.isOverdue && !isWithinMargin ? (
+                            (() => {
+                              const now = new Date()
+                              const tzOffset = now.getTimezoneOffset() * 60000
+                              const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
+                              return (
+                                <Link 
+                                  href={`/log?medicationId=${med.id}&administeredAt=${localISO}&notes=Overdue dose`}
+                                  className="btn btn-danger"
+                                  style={{ 
+                                    padding: '0.6rem 1rem', 
+                                    borderRadius: '24px',
+                                    backgroundColor: 'var(--danger)',
+                                    color: 'white',
+                                    width: '100%',
+                                    fontSize: '0.9rem',
+                                    textAlign: 'center',
+                                    textDecoration: 'none'
+                                  }}
+                                >
+                                  ⏳ Log Past
+                                </Link>
+                              )
+                            })()
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                if (!isWithinMargin) return;
+                                setAdministeringMed({ ...med, status: 'ADMINISTERED' })
+                                setAdministerNotes('')
+                              }}
+                              className={`btn ${isWithinMargin ? 'btn-success' : ''}`} 
+                              style={{ 
+                                padding: '0.6rem 1rem', 
+                                borderRadius: '24px',
+                                opacity: isWithinMargin ? 1 : 0.5,
+                                cursor: isWithinMargin ? 'pointer' : 'not-allowed',
+                                backgroundColor: isWithinMargin ? 'var(--success)' : 'var(--bg-secondary)',
+                                color: isWithinMargin ? 'white' : 'var(--text-secondary)',
+                                width: '100%',
+                                fontSize: '0.9rem'
+                              }}
+                              disabled={!isWithinMargin}
+                            >
+                              {isWithinMargin ? '✓ Administer' : 'Not in window'}
+                            </button>
+                          )}
                           
                           <button
                             onClick={() => {

@@ -90,7 +90,12 @@ export function Navigation() {
       </div>
       
       <div className="nav-menu-container" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        {user && <Link href="/log" className="btn" style={{ padding: '0.4rem 0.8rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}>Log Past Med</Link>}
+        {user && (() => {
+          const now = new Date()
+          const tzOffset = now.getTimezoneOffset() * 60000
+          const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
+          return <Link href={`/log?administeredAt=${localISO}`} className="btn" style={{ padding: '0.4rem 0.8rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}>Log Past Med</Link>
+        })()}
         
         <button 
           onClick={() => setMenuOpen(!menuOpen)} 
