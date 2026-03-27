@@ -14,12 +14,16 @@ function LogForm() {
   // Prefill from search params
   const initialMedId = searchParams.get('medicationId') || ''
   const initialTime = searchParams.get('administeredAt') || ''
+  const initialScheduledAt = searchParams.get('scheduledAt') || ''
+  const initialScheduleId = searchParams.get('scheduleId') || ''
   const initialNotes = searchParams.get('notes') || ''
   const initialUserId = searchParams.get('administeredByUserId') || ''
 
   const [form, setForm] = useState({
     medicationId: initialMedId,
     administeredAt: initialTime,
+    scheduledAt: initialScheduledAt,
+    scheduleId: initialScheduleId,
     notes: initialNotes,
     administeredByUserId: initialUserId
   })
@@ -47,7 +51,8 @@ function LogForm() {
 
     const payload = {
       ...form,
-      administeredAt: form.administeredAt ? new Date(form.administeredAt).toISOString() : new Date().toISOString()
+      administeredAt: form.administeredAt ? new Date(form.administeredAt).toISOString() : new Date().toISOString(),
+      scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null
     }
 
     const res = await fetch('/api/logs', {
