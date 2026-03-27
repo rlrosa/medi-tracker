@@ -45,7 +45,7 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel">
@@ -119,6 +119,6 @@ export default function LogsPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }

@@ -136,7 +136,7 @@ export default function CalendarView() {
   const dayDates = getDaysArray()
 
   return (
-    <div className="container" style={{ maxWidth: '1400px' }}>
+    <main className="container" style={{ maxWidth: '1400px' }}>
       <Navigation />
       
       <div className="flex-col" style={{ gap: '2rem' }}>
@@ -559,6 +559,6 @@ export default function CalendarView() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   )
 }

@@ -113,11 +113,11 @@ function LogForm() {
 
 export default function LogHistoryPage() {
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       <Suspense fallback={<div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>Loading form...</div>}>
         <LogForm />
       </Suspense>
-    </div>
+    </main>
   )
 }

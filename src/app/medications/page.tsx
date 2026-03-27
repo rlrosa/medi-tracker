@@ -41,7 +41,7 @@ export default function ManageMedicationsPage() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel">
@@ -98,6 +98,6 @@ export default function ManageMedicationsPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }

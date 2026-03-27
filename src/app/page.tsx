@@ -221,7 +221,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       {needsPermission && (
@@ -525,6 +525,6 @@ export default function Dashboard() {
           🔔 {activeToast}
         </div>
       )}
-    </div>
+    </main>
   )
 }

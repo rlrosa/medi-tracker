@@ -56,7 +56,7 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel">
@@ -119,6 +119,6 @@ export default function PatientsPage() {
       <div style={{ marginTop: '1rem', textAlign: 'center' }}>
         <Link href="/medications" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>← Back to Medications</Link>
       </div>
-    </div>
+    </main>
   )
 }
