@@ -127,23 +127,41 @@ export function Navigation() {
              </div>
 
             {user?.role === 'ADMIN' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Management</span>
-                <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>📅 Medication Timeline</Link>
-                <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>📋 Administration Logs</Link>
-                <Link href="/patients" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>📂 Patients</Link>
-                <Link href="/medications" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>💊 Medications</Link>
-                <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>+ Add New Med</Link>
-                <Link href="/invitations" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>🤝 Caregivers</Link>
-              </div>
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📅 Schedule</span>
+                  <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>Medication Timeline</Link>
+                  <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Administration Logs</Link>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👥 People</span>
+                  <Link href="/patients" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Patients</Link>
+                  <Link href="/invitations" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Caregivers</Link>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💊 Medication Inventory</span>
+                  <Link href="/medications" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Medications</Link>
+                  <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>+ Add New Med</Link>
+                </div>
+              </>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Theme</label>
-              <select className="input-field" style={{ padding: '0.4rem' }} value={theme} onChange={(e) => setTheme(e.target.value)}>
-                <option value="dark">Dark Theme</option>
-                <option value="light">Light Theme</option>
-              </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚙️ Configuration</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Theme</label>
+                <select 
+                  className="input-field" 
+                  style={{ padding: '0.4rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }} 
+                  value={theme} 
+                  onChange={(e) => setTheme(e.target.value)}
+                >
+                  <option value="dark" style={{ background: '#1a1a1a', color: '#ffffff' }}>Dark Theme</option>
+                  <option value="light" style={{ background: '#ffffff', color: '#1a1a1a' }}>Light Theme</option>
+                </select>
+              </div>
             </div>
             
             <button onClick={() => setMuteAudio(!muteAudio)} className="btn" style={{ padding: '0.5rem', background: 'var(--bg-secondary)', color: 'inherit', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

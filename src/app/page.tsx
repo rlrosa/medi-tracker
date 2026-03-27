@@ -272,7 +272,7 @@ export default function Dashboard() {
                 const isWithinMargin = Math.abs(dueTime - now) <= marginMs
 
                 return (
-                  <div key={med.instanceId || med.id} className={`glass-panel ${med.isOverdue ? 'pulse-red-bg' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderLeft: med.isOverdue ? '4px solid var(--danger)' : '1px solid var(--glass-border)' }}>
+                  <div key={med.instanceId || med.id} className={`glass-panel med-card-content ${med.isOverdue ? 'pulse-red-bg' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', borderLeft: med.isOverdue ? '4px solid var(--danger)' : '1px solid var(--glass-border)' }}>
                     <div style={{ width: '60px', height: '60px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: med.color || 'var(--bg-secondary)', borderRadius: '12px', color: 'white' }}>
                       {med.imageUrl ? (
                         <img src={med.imageUrl} alt={med.name} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
@@ -298,7 +298,7 @@ export default function Dashboard() {
                         {isSnoozed && <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', color: 'var(--accent-secondary)' }}>(Snoozed)</span>}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', minWidth: '140px' }}>
+                    <div className="med-card-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', minWidth: '140px' }}>
                       {user && isDueSoon && !isSnoozed && (
                         <button onClick={() => handleSnooze(med)} className="btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
                           💤 Snooze

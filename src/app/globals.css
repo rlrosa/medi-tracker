@@ -133,6 +133,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Layout Utilities */
 .container {
+  width: 100%;
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
@@ -143,20 +144,19 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1.5rem;
 }
 
-.flex {
-  display: flex;
+/* Fix for dark-on-dark dropdowns */
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
 }
 
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
+select.input-field option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 /* Animations */
@@ -176,18 +176,37 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1rem;
   }
 
+  /* Force stack on dashboard */
   .dashboard-grid {
     grid-template-columns: 1fr !important;
   }
 
-  nav {
-    padding: 0.75rem 1rem !important;
-    gap: 0.5rem;
+  /* Stack medication cards vertically on small mobile */
+  .med-card-content {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
   }
 
-  nav .btn {
-    padding: 0.3rem 0.6rem !important;
-    font-size: 0.8rem !important;
+  .med-card-actions {
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+
+  nav {
+    flex-direction: column;
+    padding: 1rem !important;
+    gap: 1rem;
+  }
+
+  nav > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-menu-container {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .glass-panel {

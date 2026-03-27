@@ -99,7 +99,7 @@ export default function LogsPage() {
               
               return (
                 <Link key={log.id} href={canEdit ? `/log/${log.id}/edit` : '#'} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="glass-panel" style={{ padding: '1rem', transition: 'background 0.2s', cursor: canEdit ? 'pointer' : 'default', borderColor: 'var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                  <div className="glass-panel med-card-content" style={{ padding: '1rem', transition: 'background 0.2s', cursor: canEdit ? 'pointer' : 'default', borderColor: 'var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                       <div style={{ 
                         width: '40px', 
@@ -133,7 +133,7 @@ export default function LogsPage() {
                       </div>
                     </div>
                     {canEdit && (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="med-card-actions" style={{ display: 'flex', gap: '0.5rem' }}>
                         <span className="btn" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', backgroundColor: 'var(--bg-secondary)' }}>Edit</span>
                         <button onClick={(e) => handleDelete(log.id, e)} className="btn" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', background: 'transparent', color: 'var(--danger)' }}>Del</button>
                       </div>
