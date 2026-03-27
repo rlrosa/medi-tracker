@@ -15,13 +15,16 @@ export function GlobalNotifications() {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setUser(data.user))
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
 
     const interval = setInterval(() => {
-      if (!user) return
       checkMeds()
     }, 60000) // Every minute
 
-    checkMeds() // Initial check
+    checkMeds() // Initial check when user is available
 
     return () => clearInterval(interval)
   }, [user])

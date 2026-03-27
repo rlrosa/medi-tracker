@@ -213,9 +213,14 @@ export default function CalendarView() {
                 const scheduledTime = new Date(med.nextDue)
                 const isPast = scheduledTime < now
                 
-                // Find closest log match within 3 hours
+                // Find closest log match within 3 hours, respecting scheduleId and boundary
                 const matches = dayLogs
-                  .filter(l => l.medicationId === med.id && !matchedLogIds.has(l.id))
+                  .filter(l => {
+                    if (l.medicationId !== med.id || matchedLogIds.has(l.id)) return false
+                    // Must match scheduleId OR be a manual log (null) that happened after schedule start
+                    const scheduleMatch = l.scheduleId === med.scheduleId || (l.scheduleId === null && new Date(l.administeredAt) >= new Date(med.scheduleStartDate))
+                    return scheduleMatch
+                  })
                   .sort((a, b) => {
                     const aDiff = Math.abs(new Date(a.administeredAt).getTime() - scheduledTime.getTime())
                     const bDiff = Math.abs(new Date(b.administeredAt).getTime() - scheduledTime.getTime())

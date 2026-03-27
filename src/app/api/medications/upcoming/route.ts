@@ -58,10 +58,11 @@ export async function GET(request: Request) {
         }
 
         while (currentDue && currentDue <= futureLimit) {
+          if (schedule.endDate && currentDue > new Date(schedule.endDate)) break
           // Check if this specific instance is already in logs
           const isAlreadyLogged = med.logs.some(l => {
-            // Match if same schedule OR if log has no scheduleId (orphaned log from top-level entry)
-            const scheduleMatch = l.scheduleId === schedule.id || l.scheduleId === null
+            // Match if same schedule OR if log has no scheduleId BUT happened after schedule start
+            const scheduleMatch = l.scheduleId === schedule.id || (l.scheduleId === null && new Date(l.administeredAt) >= new Date(schedule.startDate || 0))
             if (!scheduleMatch) return false
             
             // Exact match on scheduledAt
@@ -106,6 +107,8 @@ export async function GET(request: Request) {
                 patient: med.patient,
                 scheduleName: schedule.name,
                 scheduleId: schedule.id,
+                scheduleStartDate: schedule.startDate,
+                scheduleEndDate: schedule.endDate,
                 color: schedule.color || '#6366f1',
                 icon: schedule.icon || 'Pill',
                 marginMinutes: schedule.marginMinutes || 30,

@@ -16,7 +16,8 @@ export async function GET() {
       },
       include: { 
         patient: true,
-        schedules: { orderBy: { createdAt: 'asc' } }
+        schedules: { orderBy: { createdAt: 'asc' } },
+        _count: { select: { logs: true } }
       },
       orderBy: { name: 'asc' }
     })

@@ -22,6 +22,7 @@ export default function EditMedication() {
   
   const [loading, setLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [hasHistory, setHasHistory] = useState(false)
 
   const [form, setForm] = useState({
     name: '',
@@ -82,6 +83,22 @@ export default function EditMedication() {
           daysOfWeek: s.daysOfWeek
         })))
       }
+      if (med._count?.logs > 0) {
+        setHasHistory(true)
+      }
+    }
+  }
+
+  const handleFinalize = async (scheduleId: string, scheduleIndex: number) => {
+    if (!confirm('This will end the current schedule projections as of right now. Past projections will be preserved, and no new doses will be projected for this specific schedule. Proceed?')) return
+    
+    const res = await fetch(`/api/medications/schedules/${scheduleId}/finalize`, { method: 'POST' })
+    if (res.ok) {
+      const data = await res.json()
+      updateSchedule(scheduleIndex, { endDate: formatForInput(data.endDate) })
+      alert('Schedule finalized. You can now add a new schedule starting from now.')
+    } else {
+      alert('Failed to finalize schedule.')
     }
   }
 
@@ -130,6 +147,19 @@ export default function EditMedication() {
         <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Edit Medication</h2>
         
         <form onSubmit={handleSubmit} className="flex-col" style={{ gap: '1rem' }}>
+          {hasHistory && (
+            <div className="glass-panel" style={{ background: 'rgba(245, 158, 11, 0.1)', borderColor: 'var(--accent-secondary)', padding: '1rem', marginBottom: '1rem', borderStyle: 'dashed' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <Icons.AlertTriangle size={20} style={{ color: 'var(--accent-secondary)', flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ fontSize: '0.9rem' }}>
+                  <strong style={{ display: 'block', color: 'var(--accent-secondary)', marginBottom: '0.25rem' }}>Historical Data Detected</strong>
+                  Changing intervals or start dates for an active medication with history will shift <strong>past</strong> projections in the calendar. 
+                  <br /><br />
+                  For accuracy, use <strong>"Finalize Now"</strong> below to end current rules, then click <strong>"+ Add Schedule"</strong> for the new frequency.
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label style={{ display: 'block', marginBottom: '0.25rem' }}>Name *</label>
             <input required type="text" className="input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
@@ -169,15 +199,26 @@ export default function EditMedication() {
 
               return (
                 <div key={sIdx} className="glass-panel" style={{ padding: '1rem', position: 'relative', border: '1px solid var(--accent-primary)' }}>
-                  {schedules.length > 1 && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSchedules(schedules.filter((_, i) => i !== sIdx))}
-                      style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
-                    >
-                      Remove
-                    </button>
-                  )}
+                    <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                      {s.id && (!s.endDate || new Date(s.endDate) > new Date()) && (
+                        <button 
+                          type="button" 
+                          onClick={() => handleFinalize(s.id, sIdx)}
+                          style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', cursor: 'pointer', fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
+                        >
+                          Finalize Now
+                        </button>
+                      )}
+                      {schedules.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => setSchedules(schedules.filter((_, i) => i !== sIdx))}
+                          style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.8rem' }}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
                   
                   <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.8rem' }}>Schedule Name (e.g. Morning Routine)</label>

@@ -259,7 +259,7 @@ export default function Dashboard() {
                               const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
                               return (
                                 <Link 
-                                  href={`/log?medicationId=${med.id}&administeredAt=${localISO}&notes=Overdue dose`}
+                                  href={`/log?medicationId=${med.id}&administeredAt=${localISO}&notes=Overdue dose&scheduleId=${med.scheduleId}`}
                                   className="btn btn-danger"
                                   style={{ 
                                     padding: '0.6rem 1rem', 
