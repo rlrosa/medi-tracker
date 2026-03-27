@@ -115,7 +115,14 @@ export default function LogsPage() {
                         <LucideIcon size={24} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{log.medication.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{log.medication.name}</div>
+                          {log.medication.alias && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              ({log.medication.alias})
+                            </div>
+                          )}
+                        </div>
                         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                           {new Date(log.administeredAt).toLocaleString()}
                         </div>
