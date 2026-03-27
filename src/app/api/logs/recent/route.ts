@@ -20,7 +20,17 @@ export async function GET() {
       take: 50,
       orderBy: { administeredAt: 'desc' },
       include: {
-        medication: true,
+        medication: {
+          include: {
+            schedules: {
+              take: 1,
+              select: { icon: true, color: true }
+            }
+          }
+        },
+        schedule: {
+          select: { icon: true, color: true }
+        },
         administeredByUser: {
           select: { name: true, email: true, username: true }
         }

@@ -401,7 +401,9 @@ export default function Dashboard() {
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', padding: '1rem 0' }}>No recent logs.</p>
                 ) : (
                   recent.slice(0, 10).map((log, idx) => {
-                    const LucideIcon = (Icons as any)[log.medication.icon || 'Pill'] || Icons.Pill
+                    const medIcon = log.schedule?.icon || log.medication.schedules?.[0]?.icon || 'Pill'
+                    const medColor = log.schedule?.color || log.medication.schedules?.[0]?.color || 'var(--accent-primary)'
+                    const LucideIcon = (Icons as any)[medIcon] || Icons.Pill
                     return (
                       <div 
                         key={log.id} 
@@ -425,7 +427,7 @@ export default function Dashboard() {
                               width: '24px', 
                               height: '24px', 
                               borderRadius: '6px', 
-                              background: log.medication.color || 'var(--accent-primary)', 
+                              background: medColor, 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyItems: 'center',
@@ -472,12 +474,16 @@ export default function Dashboard() {
             style={{ width: '100%', maxWidth: '350px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', padding: '1.5rem' }}
           >
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: selectedLog.medication.color || 'var(--accent-primary)', borderRadius: '12px', color: 'white' }}>
-                {(() => {
-                  const LucideIcon = (Icons as any)[selectedLog.medication.icon || 'Pill'] || Icons.Pill
-                  return <LucideIcon size={28} />
-                })()}
-              </div>
+              {(() => {
+                const medIcon = selectedLog.schedule?.icon || selectedLog.medication.schedules?.[0]?.icon || 'Pill'
+                const medColor = selectedLog.schedule?.color || selectedLog.medication.schedules?.[0]?.color || 'var(--accent-primary)'
+                const LucideIcon = (Icons as any)[medIcon] || Icons.Pill
+                return (
+                  <div style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: medColor, borderRadius: '12px', color: 'white' }}>
+                    <LucideIcon size={28} />
+                  </div>
+                )
+              })()}
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedLog.medication.name}</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{selectedLog.medication.alias || 'Medication'}</p>
