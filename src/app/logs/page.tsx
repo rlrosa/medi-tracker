@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
+import * as Icons from 'lucide-react'
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -92,18 +93,36 @@ export default function LogsPage() {
             {logs.length === 0 ? <div style={{ color: 'var(--text-secondary)' }}>No logs found matching filters.</div> : null}
             {logs.map(log => {
               const canEdit = currentUser && (currentUser.role === 'ADMIN' || currentUser.id === log.administeredByUserId)
+              const medIcon = log.schedule?.icon || log.medication.schedules?.[0]?.icon || 'Pill'
+              const medColor = log.schedule?.color || log.medication.schedules?.[0]?.color || 'var(--accent-primary)'
+              const LucideIcon = (Icons as any)[medIcon] || Icons.Pill
               
               return (
                 <Link key={log.id} href={canEdit ? `/log/${log.id}/edit` : '#'} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="glass-panel" style={{ padding: '1rem', transition: 'background 0.2s', cursor: canEdit ? 'pointer' : 'default', borderColor: 'var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{log.medication.name}</div>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                        {new Date(log.administeredAt).toLocaleString()}
+                  <div className="glass-panel" style={{ padding: '1rem', transition: 'background 0.2s', cursor: canEdit ? 'pointer' : 'default', borderColor: 'var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '10px', 
+                        background: medColor, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        color: 'white',
+                        flexShrink: 0
+                      }}>
+                        <LucideIcon size={24} />
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        By: {log.administeredByUser?.name || log.administeredByUser?.username || 'Unknown'} 
-                        {log.notes && <span style={{ marginLeft: '1rem', fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>"{log.notes}"</span>}
+                      <div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{log.medication.name}</div>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          {new Date(log.administeredAt).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                          By: {log.administeredByUser?.name || log.administeredByUser?.username || 'Unknown'} 
+                          {log.notes && <span style={{ marginLeft: '1rem', fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>"{log.notes}"</span>}
+                        </div>
                       </div>
                     </div>
                     {canEdit && (

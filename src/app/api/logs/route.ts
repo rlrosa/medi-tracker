@@ -46,7 +46,17 @@ export async function GET(request: Request) {
       where: whereClause,
       orderBy: { administeredAt: 'desc' },
       include: {
-        medication: { select: { name: true, alias: true } },
+        medication: {
+          include: {
+            schedules: {
+              take: 1,
+              select: { icon: true, color: true }
+            }
+          }
+        },
+        schedule: {
+          select: { icon: true, color: true }
+        },
         administeredByUser: { select: { id: true, name: true, email: true, username: true } }
       }
     })
