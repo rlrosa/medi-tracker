@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       orderBy: { administeredAt: 'desc' },
       include: {
         medication: { select: { name: true, alias: true } },
-        administeredByUser: { select: { id: true, name: true, email: true } }
+        administeredByUser: { select: { id: true, name: true, email: true, username: true } }
       }
     })
     return NextResponse.json({ logs })

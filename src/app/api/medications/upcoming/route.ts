@@ -55,9 +55,14 @@ export async function GET(request: Request) {
           nextDue = schedule.startDate ? new Date(schedule.startDate) : now
         }
 
-        // Catch up to the requested startDate if nextDue is too far in the past
-        if (schedule.intervalHours) {
-          while (nextDue && nextDue < startDate) {
+        // Look back up to 24 hours for overdue doses that weren't caught
+        const lookbackLimit = new Date(startDate.getTime() - 24 * 60 * 60 * 1000)
+        
+        // Find the earliest dose we should care about (either nextDue or some point in the past)
+        // If nextDue is already after lookbackLimit, use it.
+        // Otherwise, if it's way in the past, move it forward until it hits the lookback window.
+        if (schedule.intervalHours && nextDue) {
+          while (nextDue.getTime() < lookbackLimit.getTime()) {
             nextDue = new Date(nextDue.getTime() + schedule.intervalHours * 60 * 60 * 1000)
           }
         }
@@ -84,7 +89,7 @@ export async function GET(request: Request) {
             isDayIncluded = match
           }
 
-          if (isDayIncluded && currentDue >= startDate) {
+          if (isDayIncluded && currentDue >= lookbackLimit) {
             upcoming.push({
               id: med.id,
               name: med.name,
@@ -111,8 +116,12 @@ export async function GET(request: Request) {
       })
     })
 
-    // Sort all upcoming doses across all medications by time
-    upcoming.sort((a, b) => a.nextDue.getTime() - b.nextDue.getTime())
+    // Sort all upcoming doses: Overdue FIRST, then by time
+    upcoming.sort((a, b) => {
+      if (a.isOverdue && !b.isOverdue) return -1
+      if (!a.isOverdue && b.isOverdue) return 1
+      return a.nextDue.getTime() - b.nextDue.getTime()
+    })
 
     return NextResponse.json({ upcoming })
   } catch (error) {

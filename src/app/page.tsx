@@ -379,7 +379,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>By: {log.administeredByUser?.name || log.administeredByUser?.email?.split('@')[0] || 'Unknown'}</span>
+                      <span>By: {log.administeredByUser?.name || log.administeredByUser?.username || log.administeredByUser?.email?.split('@')[0] || 'Unknown'}</span>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         {log.notes && <span style={{ fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0 0.3rem', borderRadius: '4px' }}>Note: {log.notes}</span>}
                         {(user?.role === 'ADMIN' || user?.id === log.administeredByUserId) && (

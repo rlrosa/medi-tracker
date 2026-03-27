@@ -22,7 +22,7 @@ export async function GET() {
       include: {
         medication: true,
         administeredByUser: {
-          select: { name: true, email: true }
+          select: { name: true, email: true, username: true }
         }
       }
     })
