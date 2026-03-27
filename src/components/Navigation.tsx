@@ -90,12 +90,6 @@ export function Navigation() {
       </div>
       
       <div className="nav-menu-container" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        {user && (() => {
-          const now = new Date()
-          const tzOffset = now.getTimezoneOffset() * 60000
-          const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
-          return <Link href={`/log?administeredAt=${localISO}`} className="btn" style={{ padding: '0.4rem 0.8rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}>Log Past Med</Link>
-        })()}
         
         <button 
           onClick={() => setMenuOpen(!menuOpen)} 
@@ -132,6 +126,20 @@ export function Navigation() {
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📅 Schedule</span>
                   <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>Medication Timeline</Link>
                   <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Administration Logs</Link>
+                  {user && (() => {
+                    const now = new Date()
+                    const tzOffset = now.getTimezoneOffset() * 60000
+                    const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
+                    return (
+                      <Link 
+                        href={`/log?administeredAt=${localISO}`} 
+                        onClick={() => setMenuOpen(false)}
+                        style={{ color: 'var(--success)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}
+                      >
+                        ➕ Log Past Medication
+                      </Link>
+                    )
+                  })()}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
