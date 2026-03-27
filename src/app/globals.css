@@ -144,6 +144,16 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1.5rem;
 }
 
+.flex-col {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.flex-row {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
 /* Fix for dark-on-dark dropdowns */
 select.input-field {
   appearance: none;

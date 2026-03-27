@@ -12,7 +12,12 @@ export async function POST() {
     const result = await undoLastAction(session.userId)
 
     if (result.success) {
-      return NextResponse.json({ success: true, actionType: result.actionType })
+      return NextResponse.json({ 
+        success: true, 
+        actionType: result.actionType,
+        undoStackCount: result.undoStackCount,
+        nextActionDescription: result.nextActionDescription
+      })
     } else {
       return NextResponse.json({ error: result.message }, { status: 400 })
     }

@@ -31,11 +31,17 @@ export async function POST(request: Request) {
 
     const deltaMs = deltaMinutes * 60000
 
+    // Get the schedule to record its current startDate
+    const schedule = await prisma.medicationSchedule.findUnique({
+      where: { id: scheduleId }
+    })
+
     // Record HISTORY for OFFSET
     await recordHistory(session.userId, 'OFFSET', {
       scheduleId,
       afterTime: fromEvent.time.toISOString(),
-      offsetMinutes: deltaMinutes
+      offsetMinutes: deltaMinutes,
+      originalScheduleStartDate: schedule?.startDate?.toISOString()
     }, `Shifted future doses`)
 
     // Update all in a transaction
@@ -51,10 +57,7 @@ export async function POST(request: Request) {
     )
 
     // Also update the schedule's startDate rhythm if needed
-    const schedule = await prisma.medicationSchedule.findUnique({
-      where: { id: scheduleId }
-    })
-    
+    // Re-using the 'schedule' fetched earlier for history recording
     if (schedule && schedule.startDate) {
         await prisma.medicationSchedule.update({
             where: { id: scheduleId },

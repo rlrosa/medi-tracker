@@ -21,6 +21,7 @@ export default function CalendarView() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [movementData, setMovementData] = useState<any>(null)
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null)
+  const [guidelineY, setGuidelineY] = useState<number | null>(null)
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -42,7 +43,9 @@ export default function CalendarView() {
   // Undo State
   const [lastActionDescription, setLastActionDescription] = useState<string | null>(null)
   const [showUndoToast, setShowUndoToast] = useState(false)
+  const [isUndoPinned, setIsUndoPinned] = useState(false)
   const [isUndoing, setIsUndoing] = useState(false)
+  const [undoStackCount, setUndoStackCount] = useState(0)
 
   const fetchData = async () => {
     try {
@@ -52,17 +55,24 @@ export default function CalendarView() {
       const end = new Date(start)
       end.setDate(end.getDate() + days)
       
-      const [meRes, upcomingRes, logsRes, usersRes] = await Promise.all([
+      const [meRes, upcomingRes, logsRes, usersRes, historyRes] = await Promise.all([
         fetch('/api/auth/me'),
         fetch(`/api/medications/upcoming?hours=${hours}&startDate=${start.toISOString()}`),
         fetch(`/api/logs?startDate=${start.toISOString()}&endDate=${end.toISOString()}`),
-        fetch('/api/users')
+        fetch('/api/users'),
+        fetch('/api/events/history')
       ])
       
       const meData = await meRes.json()
       if (!meData.user) {
         router.push('/login')
         return
+      }
+
+      const historyData = await historyRes.json()
+      setUndoStackCount(historyData.count || 0)
+      if (historyData.count > 0 && !lastActionDescription) {
+        setLastActionDescription(historyData.lastDescription)
       }
       setUser(meData.user)
       if (meData.user.defaultMovePreference) {
@@ -95,6 +105,39 @@ export default function CalendarView() {
     setIsMounted(true)
     fetchData()
   }, [days, viewDate])
+
+  useEffect(() => {
+    let timer: any
+    if (showUndoToast && !isUndoPinned) {
+      timer = setTimeout(() => {
+        setShowUndoToast(false)
+      }, 18000) // 18 seconds (3x from 6s)
+    }
+    return () => clearTimeout(timer)
+  }, [showUndoToast, isUndoPinned])
+
+  useEffect(() => {
+    const handleReopen = () => {
+      if (lastActionDescription) {
+        setShowUndoToast(true)
+        setIsUndoPinned(true)
+      }
+    }
+    window.addEventListener('reopenUndoToast', handleReopen)
+    return () => window.removeEventListener('reopenUndoToast', handleReopen)
+  }, [lastActionDescription])
+
+  const persistMovePreference = async (mode: 'ASK' | 'SINGLE' | 'OFFSET') => {
+    try {
+      await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultMovePreference: mode })
+      })
+    } catch (err) {
+      console.error('Failed to persist move preference', err)
+    }
+  }
 
   const handleSync = async () => {
     // ... existed logic
@@ -132,11 +175,11 @@ export default function CalendarView() {
         setTimeout(() => setShowPulse(false), 2000)
         
         // Persist to DB
-        await fetch('/api/auth/me', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ defaultMovePreference: mode })
-        })
+        persistMovePreference(mode)
+      } else if (movePreference === 'ASK') {
+        // Just update local header state even if not "remembered" for persistence
+        // to make it "sticky" for the current session
+        setMovePreference(mode)
       }
 
       setShowMoveModal(false)
@@ -144,8 +187,9 @@ export default function CalendarView() {
       setRememberMove(false)
       
       setLastActionDescription(`Moved ${data.name || 'dose'}`)
+      setUndoStackCount(prev => prev + 1)
       setShowUndoToast(true)
-      setTimeout(() => setShowUndoToast(false), 6000)
+      setIsUndoPinned(false) // Reset pin on new action
 
       await fetchData()
     } catch (err) {
@@ -178,8 +222,9 @@ export default function CalendarView() {
       setSelectedEntry(null)
       
       setLastActionDescription(`Deleted dose of ${deletingEvent.name}`)
+      setUndoStackCount(prev => prev + 1)
       setShowUndoToast(true)
-      setTimeout(() => setShowUndoToast(false), 6000)
+      setIsUndoPinned(false)
 
       await fetchData()
     } catch (err) {
@@ -193,12 +238,20 @@ export default function CalendarView() {
     setIsUndoing(true)
     try {
       const res = await fetch('/api/events/undo', { method: 'POST' })
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
         throw new Error(data.error || 'Undo failed')
       }
-      setShowUndoToast(false)
-      setLastActionDescription(null)
+      
+      setUndoStackCount(data.undoStackCount || 0)
+      if (data.undoStackCount > 0) {
+        setLastActionDescription(data.nextActionDescription)
+        setShowUndoToast(true)
+      } else {
+        setShowUndoToast(false)
+        setLastActionDescription(null)
+      }
+      
       await fetchData()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred')
@@ -222,7 +275,8 @@ export default function CalendarView() {
     e.preventDefault()
     if (!draggedItem) return
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const inner = (e.currentTarget as HTMLElement).querySelector('.timeline-inner')
+    const rect = inner ? inner.getBoundingClientRect() : (e.currentTarget as HTMLElement).getBoundingClientRect()
     const y = e.clientY - rect.top
     const hourPercent = y / rect.height
     const totalMinutes = hourPercent * 1440
@@ -253,6 +307,7 @@ export default function CalendarView() {
     setDraggedItem(null)
     setPreviewTime(null)
     setHoveredDay(null)
+    setGuidelineY(null)
   }
 
   const onDragOver = (e: React.DragEvent, date: Date) => {
@@ -262,8 +317,12 @@ export default function CalendarView() {
     setMousePos({ x: e.clientX, y: e.clientY })
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const y = e.clientY - rect.top
-    const hourPercent = y / rect.height
+    const inner = (e.currentTarget as HTMLElement).querySelector('.timeline-inner')
+    const innerRect = inner ? inner.getBoundingClientRect() : rect
+    
+    // y should be relative to the inner timeline container for correct snapping and guideline placement
+    const y = e.clientY - innerRect.top
+    const hourPercent = y / innerRect.height
     const totalMinutes = hourPercent * 1440
     
     // Snap to 15m
@@ -279,6 +338,7 @@ export default function CalendarView() {
       setPreviewTime(newTime)
     }
     setHoveredDay(date)
+    setGuidelineY(y)
   }
 
   const handleAdminister = async () => {
@@ -380,7 +440,7 @@ export default function CalendarView() {
                   return (
                     <button
                       key={pref.id}
-                      onClick={() => setMovePreference(pref.id as any)}
+                      onClick={() => { setMovePreference(pref.id as any); persistMovePreference(pref.id as any); }}
                       className="btn"
                       style={{
                         padding: '0.4rem 0.8rem',
@@ -407,7 +467,20 @@ export default function CalendarView() {
               <button onClick={prevRange} className="btn" style={{ padding: '0.5rem', background: 'none', border: 'none', color: 'var(--text-primary)' }} title="Previous Range">
                 <Icons.ChevronLeft size={20} />
               </button>
-              <button onClick={resetToToday} className="btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)' }}>Today</button>
+              <button 
+                onClick={resetToToday} 
+                className="btn" 
+                style={{ 
+                  fontSize: '0.8rem', 
+                  padding: '0.4rem 0.8rem', 
+                  background: 'var(--bg-secondary)', 
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--text-primary)',
+                  fontWeight: '600'
+                }}
+              >
+                Today
+              </button>
               <button onClick={nextRange} className="btn" style={{ padding: '0.5rem', background: 'none', border: 'none', color: 'var(--text-primary)' }} title="Next Range">
                 <Icons.ChevronRight size={20} />
               </button>
@@ -566,7 +639,7 @@ export default function CalendarView() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
                   </div>
                   
-                  <div style={{ position: 'relative', height: '2880px', background: 'rgba(255,255,255,0.02)', width: '100%' }}>
+                  <div className="timeline-inner" style={{ position: 'relative', height: '2880px', background: 'rgba(255,255,255,0.02)', width: '100%' }}>
                     {/* Hour Markers */}
                     {Array.from({ length: 24 }).map((_, hour) => (
                       <div key={hour} style={{ 
@@ -696,10 +769,10 @@ export default function CalendarView() {
                       )
                     })}
                     {/* Drag Guideline */}
-                    {hoveredDay && hoveredDay.toDateString() === date.toDateString() && previewTime && (
+                    {previewTime && hoveredDay?.getTime() === date.getTime() && guidelineY !== null && (
                       <div style={{
                         position: 'absolute',
-                        top: `${((previewTime.getHours() * 60 + previewTime.getMinutes()) / 1440) * 100}%`,
+                        top: `${guidelineY}px`,
                         left: 0,
                         right: 0,
                         height: '2px',
@@ -707,8 +780,7 @@ export default function CalendarView() {
                         opacity: 0.8,
                         boxShadow: '0 0 15px var(--accent-primary)',
                         zIndex: 50,
-                        pointerEvents: 'none',
-                        transition: 'top 0.1s ease-out'
+                        pointerEvents: 'none'
                       }}>
                         <div style={{
                           position: 'absolute',
@@ -1087,38 +1159,61 @@ export default function CalendarView() {
       )}
       {/* Undo Toast */}
       {showUndoToast && lastActionDescription && (
-        <div className="undo-toast">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="undo-toast" style={{ minWidth: '320px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
             <div style={{ background: 'var(--success)', padding: '0.5rem', borderRadius: '50%', color: 'white', display: 'flex' }}>
               <Icons.CheckCircle size={18} />
             </div>
             <div>
-              <p style={{ fontWeight: '600', fontSize: '0.9rem' }}>{lastActionDescription}</p>
-              <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Action recorded successfully</p>
+              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                {lastActionDescription} {undoStackCount > 1 && <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>({undoStackCount} steps total)</span>}
+              </p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Action recorded successfully</p>
             </div>
           </div>
-          <button 
-            onClick={handleUndo}
-            disabled={isUndoing}
-            className="btn"
-            style={{ 
-              background: 'var(--bg-primary)', 
-              border: '1px solid var(--accent-primary)', 
-              color: 'var(--accent-primary)',
-              padding: '0.4rem 1rem',
-              fontSize: '0.8rem',
-              borderRadius: '8px',
-              marginLeft: 'auto'
-            }}
-          >
-            {isUndoing ? <Icons.Loader2 className="animate-spin" size={14} /> : 'Undo'}
-          </button>
-          <button 
-            onClick={() => setShowUndoToast(false)}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
-          >
-            <Icons.X size={16} />
-          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button 
+              onClick={handleUndo}
+              disabled={isUndoing}
+              className="btn"
+              style={{ 
+                background: 'var(--bg-primary)', 
+                border: '1px solid var(--accent-primary)', 
+                color: 'var(--accent-primary)',
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.8rem',
+                borderRadius: '8px',
+              }}
+              title="Undo last action"
+            >
+              {isUndoing ? <Icons.Loader2 className="animate-spin" size={14} /> : 'Undo'}
+            </button>
+
+            <button 
+              onClick={() => setIsUndoPinned(!isUndoPinned)}
+              style={{ 
+                background: isUndoPinned ? 'var(--accent-primary)' : 'none', 
+                border: 'none', 
+                color: isUndoPinned ? 'white' : 'var(--text-secondary)', 
+                cursor: 'pointer', 
+                padding: '0.4rem',
+                borderRadius: '6px',
+                display: 'flex'
+              }}
+              title={isUndoPinned ? "Pinned (forever)" : "Pin to keep open"}
+            >
+              <Icons.Pin size={16} style={{ transform: isUndoPinned ? 'rotate(45deg)' : 'none' }} />
+            </button>
+
+            <button 
+              onClick={() => setShowUndoToast(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.4rem', display: 'flex' }}
+              title="Dismiss"
+            >
+              <Icons.X size={18} />
+            </button>
+          </div>
         </div>
       )}
     </main>

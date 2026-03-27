@@ -128,6 +128,25 @@ export function Navigation() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📅 Schedule</span>
                   <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>Medication Timeline</Link>
+                  <div 
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('reopenUndoToast'))
+                      setMenuOpen(false)
+                    }}
+                    style={{ 
+                      color: 'var(--text-secondary)', 
+                      cursor: 'pointer', 
+                      fontSize: '0.85rem', 
+                      padding: '0.2rem 0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}
+                    title="Re-open undo notification"
+                  >
+                    <span>↩️</span>
+                    <span>Undo Last Action</span>
+                  </div>
                   <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Administration Logs</Link>
                   {user && (() => {
                     const now = new Date()

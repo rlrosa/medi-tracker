@@ -102,6 +102,16 @@ async function generateEventsForSchedule(schedule: any, startFrom: Date, endLimi
 }
 
 export async function recordHistory(userId: string, actionType: string, undoData: any, description?: string) {
+  // Prune history (keep last 10)
+  const historyCount = await prisma.medicationEventHistory.count({ where: { userId } })
+  if (historyCount >= 10) {
+    const oldest = await prisma.medicationEventHistory.findFirst({
+      where: { userId },
+      orderBy: { timestamp: 'asc' }
+    })
+    if (oldest) await prisma.medicationEventHistory.delete({ where: { id: oldest.id } })
+  }
+
   return await prisma.medicationEventHistory.create({
     data: {
       userId,
@@ -146,32 +156,29 @@ export async function undoLastAction(userId: string) {
         break
       
       case 'OFFSET':
-        // Revert offset
-        await prisma.medicationEvent.updateMany({
-          where: {
-            scheduleId: undoData.scheduleId,
-            status: 'PENDING',
-            time: { gte: new Date(undoData.afterTime) }
-          },
-          data: {
-            time: {
-              decrement: undoData.offsetMinutes * 60 * 1000 // This doesn't work in Prisma SQLite directly for dates
-            } as any
-          }
-        })
-        // Wait, SQLite/Prisma updateMany with increment is tricky for dates.
-        // Better: Fetch and update for SQLite.
+        // Revert offset for all PENDING events
+        // Better: Fetch and update for SQLite to avoid complex date arithmetic in updateMany
         const eventsToRevert = await prisma.medicationEvent.findMany({
           where: {
             scheduleId: undoData.scheduleId,
-            status: 'PENDING',
-            time: { gte: new Date(undoData.afterTime) }
+            status: 'PENDING'
           }
         })
+        
         for (const event of eventsToRevert) {
+          // Only shift if it's within or after the recorded window
+          // To be safe, we shift EVERYTHING PENDING if it's a schedule-wide offset
           await prisma.medicationEvent.update({
             where: { id: event.id },
             data: { time: new Date(event.time.getTime() - undoData.offsetMinutes * 60000) }
+          })
+        }
+
+        // Revert schedule startDate rhythm
+        if (undoData.originalScheduleStartDate) {
+          await prisma.medicationSchedule.update({
+            where: { id: undoData.scheduleId },
+            data: { startDate: new Date(undoData.originalScheduleStartDate) }
           })
         }
         break
@@ -192,9 +199,36 @@ export async function undoLastAction(userId: string) {
 
     // Delete history record after successful undo
     await prisma.medicationEventHistory.delete({ where: { id: lastHistory.id } })
-    return { success: true, actionType: lastHistory.actionType }
+
+    // Return current stack status
+    const remainingHistory = await prisma.medicationEventHistory.findFirst({
+      where: { userId },
+      orderBy: { timestamp: 'desc' }
+    })
+    const count = await prisma.medicationEventHistory.count({ where: { userId } })
+
+    return { 
+      success: true, 
+      actionType: lastHistory.actionType,
+      nextActionDescription: remainingHistory?.description || null,
+      undoStackCount: count
+    }
   } catch (error) {
     console.error('Undo failed:', error)
     return { success: false, message: 'Undo failed' }
+  }
+}
+
+export async function getHistoryCount(userId: string) {
+  try {
+    const count = await prisma.medicationEventHistory.count({ where: { userId } })
+    const last = await prisma.medicationEventHistory.findFirst({
+      where: { userId },
+      orderBy: { timestamp: 'desc' }
+    })
+    return { count, lastDescription: last?.description || null }
+  } catch (err) {
+    console.error('Error getting history count:', err)
+    return { count: 0, lastDescription: null }
   }
 }

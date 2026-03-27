@@ -39,28 +39,30 @@ export default function LoginPage() {
         
         {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
         
-        <form onSubmit={handleLogin} className="flex-col" style={{ gap: '1rem', display: 'flex' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Email or Username</label>
+        <form onSubmit={handleLogin} className="flex-col" style={{ gap: '1.25rem' }}>
+          <div className="flex-col" style={{ gap: '0.25rem', textAlign: 'left' }}>
+            <label style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Email or Username</label>
             <input 
               type="text" 
               className="input-field" 
+              placeholder="rr"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required 
             />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Password</label>
+          <div className="flex-col" style={{ gap: '0.25rem', textAlign: 'left' }}>
+            <label style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Password</label>
             <input 
               type="password" 
               className="input-field" 
+              placeholder="1234"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required 
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={loading}>
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }} disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
