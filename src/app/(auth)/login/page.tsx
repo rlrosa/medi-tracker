@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <main className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
         <img src="/logo.png" alt="MediTracker" style={{ width: '80px', height: '80px', marginBottom: '1rem', objectFit: 'contain' }} />
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>MediTracker</h1>
@@ -69,6 +69,6 @@ export default function LoginPage() {
           Don't have an account? <Link href="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Register here</Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

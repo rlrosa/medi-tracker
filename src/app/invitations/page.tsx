@@ -51,7 +51,7 @@ export default function InvitationsPage() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel">
@@ -150,6 +150,6 @@ export default function InvitationsPage() {
       <div style={{ marginTop: '1rem', textAlign: 'center' }}>
         <Link href="/medications" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>← Back to Management</Link>
       </div>
-    </div>
+    </main>
   )
 }

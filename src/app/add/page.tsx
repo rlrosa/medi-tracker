@@ -123,7 +123,7 @@ export default function AddMedication() {
   if (!isAdmin) return <div className="container" style={{ textAlign: 'center', marginTop: '2rem' }}>Checking permissions...</div>
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -289,6 +289,6 @@ export default function AddMedication() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   )
 }

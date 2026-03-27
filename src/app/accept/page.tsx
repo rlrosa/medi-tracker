@@ -46,18 +46,18 @@ function AcceptInvitationForm() {
 
   if (!token) {
     return (
-      <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <main className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div className="glass-panel" style={{ textAlign: 'center' }}>
           <h2 style={{ color: 'var(--danger)' }}>Invalid Link</h2>
           <p>No invitation token provided. Please check your link.</p>
           <Link href="/login" className="btn" style={{ marginTop: '1rem', display: 'inline-block' }}>Go to Login</Link>
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <main className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '450px', textAlign: 'center' }}>
         <img src="/logo.png" alt="MediTracker" style={{ width: '80px', height: '80px', marginBottom: '1rem', objectFit: 'contain' }} />
         
@@ -94,7 +94,7 @@ function AcceptInvitationForm() {
           </>
         )}
       </div>
-    </div>
+    </main>
   )
 }
 

@@ -83,11 +83,11 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       <Suspense fallback={<div className="container" style={{ textAlign: 'center' }}>Loading...</div>}>
         <ResetPasswordForm />
       </Suspense>
-    </div>
+    </main>
   )
 }

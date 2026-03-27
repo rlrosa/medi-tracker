@@ -60,7 +60,7 @@ export default function EditLogPage() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <Navigation />
       
       <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -96,6 +96,6 @@ export default function EditLogPage() {
           </form>
         )}
       </div>
-    </div>
+    </main>
   )
 }
