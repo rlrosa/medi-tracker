@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [accountUsers, setAccountUsers] = useState<any[]>([])
   const [selectedCaregiverId, setSelectedCaregiverId] = useState('')
   const [snoozingMed, setSnoozingMed] = useState<any>(null)
+  const [selectedLog, setSelectedLog] = useState<any>(null)
 
   const fetchData = async () => {
     try {
@@ -390,32 +391,139 @@ export default function Dashboard() {
           </div>
           
           <div className="flex-col" style={{ gap: '1.5rem' }}>
-            <div className="glass-panel">
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Recent Administrations</span>
-                <Link href="/logs" style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'normal' }}>See All →</Link>
+            <div className="glass-panel" style={{ padding: '0.75rem 1rem' }}>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9 }}>
+                <span>Recent</span>
+                <Link href="/logs" style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: '500' }}>All →</Link>
               </h3>
-              <div className="flex-col" style={{ gap: '1rem' }}>
-                {recent.length === 0 ? <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>No recent logs.</p> : recent.slice(0, 10).map(log => (
-                  <div key={log.id} style={{ fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span style={{ fontWeight: 'bold' }}>{log.medication.name}</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {new Date(log.administeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>By: {log.administeredByUser?.name || log.administeredByUser?.username || log.administeredByUser?.email?.split('@')[0] || 'Unknown'}</span>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        {log.notes && <span style={{ fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '0 0.3rem', borderRadius: '4px' }}>Note: {log.notes}</span>}
-                        {(user?.role === 'ADMIN' || user?.id === log.administeredByUserId) && (
-                          <Link href={`/log/${log.id}/edit`} style={{ fontSize: '0.75rem', color: 'var(--accent-secondary)', textDecoration: 'none', background: 'var(--glass-border)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Edit</Link>
-                        )}
+              <div className="flex-col" style={{ gap: '0' }}>
+                {recent.length === 0 ? (
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', padding: '1rem 0' }}>No recent logs.</p>
+                ) : (
+                  recent.slice(0, 10).map((log, idx) => {
+                    const LucideIcon = (Icons as any)[log.medication.icon || 'Pill'] || Icons.Pill
+                    return (
+                      <div 
+                        key={log.id} 
+                        onClick={() => setSelectedLog(log)}
+                        style={{ 
+                          fontSize: '0.85rem', 
+                          padding: '0.6rem 0',
+                          borderTop: idx === 0 ? 'none' : '1px solid var(--glass-border)',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.2rem'
+                        }}
+                        className="hover-subtle"
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ 
+                              width: '24px', 
+                              height: '24px', 
+                              borderRadius: '6px', 
+                              background: log.medication.color || 'var(--accent-primary)', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                              flexShrink: 0
+                            }}>
+                              <LucideIcon size={14} />
+                            </div>
+                            <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{log.medication.name}</span>
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {new Date(log.administeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '2rem' }}>
+                          <span style={{ opacity: 0.8 }}>{log.administeredByUser?.name || log.administeredByUser?.username || 'Caregiver'}</span>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                            {log.notes && <Icons.MessageSquare size={12} style={{ opacity: 0.5 }} />}
+                            {(user?.role === 'ADMIN' || user?.id === log.administeredByUserId) && (
+                              <Link href={`/log/${log.id}/edit`} style={{ fontSize: '0.7rem', color: 'var(--accent-secondary)', textDecoration: 'none', background: 'var(--glass-border)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Edit</Link>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  })
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Log Detail Modal */}
+      {selectedLog && (
+        <div 
+          onClick={() => setSelectedLog(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="glass-panel" 
+            style={{ width: '100%', maxWidth: '350px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', padding: '1.5rem' }}
+          >
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: selectedLog.medication.color || 'var(--accent-primary)', borderRadius: '12px', color: 'white' }}>
+                {(() => {
+                  const LucideIcon = (Icons as any)[selectedLog.medication.icon || 'Pill'] || Icons.Pill
+                  return <LucideIcon size={28} />
+                })()}
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedLog.medication.name}</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{selectedLog.medication.alias || 'Medication'}</p>
+              </div>
+            </div>
+
+            <div className="flex-col" style={{ gap: '0.75rem', fontSize: '0.9rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Status</span>
+                <span style={{ fontWeight: '600', color: selectedLog.status === 'SKIPPED' ? 'var(--danger)' : 'var(--success)' }}>
+                  {selectedLog.status}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Time</span>
+                <span style={{ fontWeight: '500' }}>{new Date(selectedLog.administeredAt).toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Caregiver</span>
+                <span style={{ fontWeight: '500' }}>{selectedLog.administeredByUser?.name || selectedLog.administeredByUser?.username || 'Unknown'}</span>
+              </div>
+              {selectedLog.notes && (
+                <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '8px', marginTop: '0.5rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Notes:</p>
+                  <p style={{ fontStyle: 'italic' }}>"{selectedLog.notes}"</p>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+              {(user?.role === 'ADMIN' || user?.id === selectedLog.administeredByUserId) && (
+                <button 
+                  className="btn" 
+                  style={{ flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)' }}
+                  onClick={() => router.push(`/log/${selectedLog.id}/edit`)}
+                >
+                  Edit Log
+                </button>
+              )}
+              <button 
+                className="btn btn-primary" 
+                style={{ flex: 1 }}
+                onClick={() => setSelectedLog(null)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
