@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import { undoLastAction } from '@/lib/events-manager'
+import { redoLastAction } from '@/lib/events-manager'
 
 export async function POST() {
   try {
@@ -9,7 +9,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await undoLastAction(session.userId)
+    const result = await redoLastAction(session.userId)
 
     if (result.success) {
       return NextResponse.json(result)
@@ -17,7 +17,7 @@ export async function POST() {
       return NextResponse.json({ error: (result as any).message }, { status: 400 })
     }
   } catch (error) {
-    console.error('Error in undo API:', error)
+    console.error('Error in redo API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

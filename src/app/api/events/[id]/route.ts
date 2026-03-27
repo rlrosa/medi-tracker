@@ -45,10 +45,19 @@ export async function PATCH(
         }
       })
 
-      await recordHistory(session.userId, 'BULK_DELETE', {
-        scheduleId: event.scheduleId,
-        events: eventsToDelete
-      }, `Ended schedule ${event.schedule.name || 'medication'}`)
+      await recordHistory(session.userId, 'BULK_DELETE', 
+        { 
+          mode: 'RESTORE',
+          scheduleId: event.scheduleId, 
+          events: eventsToDelete 
+        },
+        {
+          mode: 'DELETE',
+          scheduleId: event.scheduleId,
+          afterTime: event.time.toISOString()
+        },
+        `Ended schedule ${event.schedule.name || 'medication'}`
+      )
 
       // 1. Delete all future PENDING events for this schedule
       await prisma.medicationEvent.deleteMany({
@@ -70,11 +79,11 @@ export async function PATCH(
 
     // Record HISTORY for MOVE
     if (time) {
-      await recordHistory(session.userId, 'MOVE', {
-        eventId,
-        previousTime: event.time.toISOString(),
-        newTime: time
-      }, `Moved ${event.schedule.name || 'dose'}`)
+      await recordHistory(session.userId, 'MOVE', 
+        { eventId, time: event.time.toISOString() }, // Undo: back to old time
+        { eventId, time: time },                      // Redo: to new time
+        `Moved ${event.schedule.name || 'dose'}`
+      )
     }
 
     const updatedEvent = await prisma.medicationEvent.update({
@@ -122,14 +131,19 @@ export async function DELETE(
     }
 
     // Record History for Undo
-    await recordHistory(session.userId, 'DELETE', {
-      id: event.id,
-      scheduleId: event.scheduleId,
-      medicationId: event.medicationId,
-      time: event.time.toISOString(),
-      originalTime: event.originalTime?.toISOString(),
-      status: event.status
-    }, `Deleted dose of ${event.medication.name}`)
+    await recordHistory(session.userId, 'DELETE', 
+      {
+        mode: 'RESTORE',
+        id: event.id,
+        scheduleId: event.scheduleId,
+        medicationId: event.medicationId,
+        time: event.time.toISOString(),
+        originalTime: event.originalTime?.toISOString(),
+        status: event.status
+      },
+      { mode: 'DELETE', id: event.id },
+      `Deleted dose of ${event.medication.name}`
+    )
 
     await prisma.medicationEvent.delete({
       where: { id: eventId }

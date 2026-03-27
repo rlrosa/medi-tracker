@@ -134,18 +134,19 @@ export function Navigation() {
                       setMenuOpen(false)
                     }}
                     style={{ 
-                      color: 'var(--text-secondary)', 
+                      color: 'var(--text-primary)', // High contrast 
                       cursor: 'pointer', 
-                      fontSize: '0.85rem', 
-                      padding: '0.2rem 0',
+                      fontSize: '0.9rem', 
+                      padding: '0.4rem 0',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem'
+                      gap: '0.5rem',
+                      fontWeight: 500
                     }}
                     title="Re-open undo notification"
                   >
-                    <span>↩️</span>
-                    <span>Undo Last Action</span>
+                    <span style={{ fontSize: '1.1rem' }}>↩️</span>
+                    <span>Undo Menu</span>
                   </div>
                   <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Administration Logs</Link>
                   {user && (() => {

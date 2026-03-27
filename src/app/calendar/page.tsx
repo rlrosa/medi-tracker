@@ -42,10 +42,12 @@ export default function CalendarView() {
 
   // Undo State
   const [lastActionDescription, setLastActionDescription] = useState<string | null>(null)
+  const [lastRedoDescription, setLastRedoDescription] = useState<string | null>(null)
   const [showUndoToast, setShowUndoToast] = useState(false)
   const [isUndoPinned, setIsUndoPinned] = useState(false)
   const [isUndoing, setIsUndoing] = useState(false)
-  const [undoStackCount, setUndoStackCount] = useState(0)
+  const [undoCount, setUndoCount] = useState(0)
+  const [redoCount, setRedoCount] = useState(0)
 
   const fetchData = async () => {
     try {
@@ -70,9 +72,13 @@ export default function CalendarView() {
       }
 
       const historyData = await historyRes.json()
-      setUndoStackCount(historyData.count || 0)
-      if (historyData.count > 0 && !lastActionDescription) {
-        setLastActionDescription(historyData.lastDescription)
+      setUndoCount(historyData.undoCount || 0)
+      setRedoCount(historyData.redoCount || 0)
+      if (historyData.undoCount > 0 && !lastActionDescription) {
+        setLastActionDescription(historyData.lastUndoDescription)
+      }
+      if (historyData.redoCount > 0) {
+        setLastRedoDescription(historyData.lastRedoDescription)
       }
       setUser(meData.user)
       if (meData.user.defaultMovePreference) {
@@ -114,7 +120,7 @@ export default function CalendarView() {
       }, 18000) // 18 seconds (3x from 6s)
     }
     return () => clearTimeout(timer)
-  }, [showUndoToast, isUndoPinned])
+  }, [showUndoToast, isUndoPinned, undoCount, redoCount])
 
   useEffect(() => {
     const handleReopen = () => {
@@ -187,7 +193,8 @@ export default function CalendarView() {
       setRememberMove(false)
       
       setLastActionDescription(`Moved ${data.name || 'dose'}`)
-      setUndoStackCount(prev => prev + 1)
+      setUndoCount(prev => Math.min(prev + 1, 10))
+      setRedoCount(0) // New action clears redo stack
       setShowUndoToast(true)
       setIsUndoPinned(false) // Reset pin on new action
 
@@ -222,7 +229,8 @@ export default function CalendarView() {
       setSelectedEntry(null)
       
       setLastActionDescription(`Deleted dose of ${deletingEvent.name}`)
-      setUndoStackCount(prev => prev + 1)
+      setUndoCount(prev => Math.min(prev + 1, 10))
+      setRedoCount(0) // New action clears redo stack
       setShowUndoToast(true)
       setIsUndoPinned(false)
 
@@ -243,13 +251,43 @@ export default function CalendarView() {
         throw new Error(data.error || 'Undo failed')
       }
       
-      setUndoStackCount(data.undoStackCount || 0)
-      if (data.undoStackCount > 0) {
-        setLastActionDescription(data.nextActionDescription)
-        setShowUndoToast(true)
-      } else {
+      setUndoCount(data.undoCount || 0)
+      setRedoCount(data.redoCount || 0)
+      setLastActionDescription(data.lastUndoDescription || null)
+      setLastRedoDescription(data.lastRedoDescription || null)
+      
+      if (data.undoCount === 0 && data.redoCount === 0) {
         setShowUndoToast(false)
-        setLastActionDescription(null)
+      } else {
+        setShowUndoToast(true)
+      }
+      
+      await fetchData()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsUndoing(false)
+    }
+  }
+
+  const handleRedo = async () => {
+    setIsUndoing(true)
+    try {
+      const res = await fetch('/api/events/redo', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Redo failed')
+      }
+      
+      setUndoCount(data.undoCount || 0)
+      setRedoCount(data.redoCount || 0)
+      setLastActionDescription(data.lastUndoDescription || null)
+      setLastRedoDescription(data.lastRedoDescription || null)
+      
+      if (data.undoCount === 0 && data.redoCount === 0) {
+        setShowUndoToast(false)
+      } else {
+        setShowUndoToast(true)
       }
       
       await fetchData()
@@ -1157,62 +1195,107 @@ export default function CalendarView() {
           </div>
         </div>
       )}
-      {/* Undo Toast */}
-      {showUndoToast && lastActionDescription && (
-        <div className="undo-toast" style={{ minWidth: '320px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-            <div style={{ background: 'var(--success)', padding: '0.5rem', borderRadius: '50%', color: 'white', display: 'flex' }}>
-              <Icons.CheckCircle size={18} />
+      {/* Undo/Redo Toast */}
+      {showUndoToast && (lastActionDescription || lastRedoDescription) && (
+        <div className="undo-toast" style={{ minWidth: '380px', maxWidth: '450px', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', padding: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                <div style={{ background: 'var(--accent-primary)', padding: '0.5rem', borderRadius: '50%', color: 'white', display: 'flex' }}>
+                  <Icons.History size={18} />
+                </div>
+                <div style={{ overflow: 'hidden' }}>
+                  <p style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                    {lastActionDescription || 'No actions to undo'}
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {undoCount > 0 ? `${undoCount} steps available` : 'History menu'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button 
+                  onClick={() => setIsUndoPinned(!isUndoPinned)}
+                  style={{ 
+                    background: isUndoPinned ? 'var(--accent-primary)' : 'none', 
+                    border: 'none', 
+                    color: isUndoPinned ? 'white' : 'var(--text-secondary)', 
+                    cursor: 'pointer', 
+                    padding: '0.4rem',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    transition: 'all 0.2s'
+                  }}
+                  title={isUndoPinned ? "Keep open" : "Pin Menu"}
+                >
+                  <Icons.Pin size={16} style={{ transform: isUndoPinned ? 'rotate(45deg)' : 'none' }} />
+                  <span style={{ fontSize: '0.7rem', marginLeft: '2px', fontWeight: 'bold' }}>{isUndoPinned ? 'STICKY' : 'STAY?'}</span>
+                </button>
+                <button 
+                  onClick={() => setShowUndoToast(false)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.4rem', display: 'flex' }}
+                  title="Dismiss"
+                >
+                  <Icons.X size={18} />
+                </button>
+              </div>
             </div>
-            <div>
-              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                {lastActionDescription} {undoStackCount > 1 && <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>({undoStackCount} steps total)</span>}
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Action recorded successfully</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button 
+                onClick={handleUndo}
+                disabled={isUndoing || undoCount === 0}
+                className="btn"
+                style={{ 
+                  background: undoCount > 0 ? 'rgba(99, 102, 241, 0.1)' : 'transparent', 
+                  border: '1px solid var(--accent-primary)', 
+                  color: 'var(--accent-primary)',
+                  padding: '0.6rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  opacity: undoCount === 0 ? 0.3 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isUndoing ? <Icons.Loader2 className="animate-spin" size={14} /> : <Icons.Undo2 size={16} />}
+                <span>Undo</span>
+              </button>
+
+              <button 
+                onClick={handleRedo}
+                disabled={isUndoing || redoCount === 0}
+                className="btn"
+                style={{ 
+                  background: redoCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'transparent', 
+                  border: '1px solid var(--success)', 
+                  color: 'var(--success)',
+                  padding: '0.6rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  opacity: redoCount === 0 ? 0.3 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isUndoing ? <Icons.Loader2 className="animate-spin" size={14} /> : <Icons.Redo2 size={16} />}
+                <span>Redo</span>
+              </button>
             </div>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button 
-              onClick={handleUndo}
-              disabled={isUndoing}
-              className="btn"
-              style={{ 
-                background: 'var(--bg-primary)', 
-                border: '1px solid var(--accent-primary)', 
-                color: 'var(--accent-primary)',
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.8rem',
-                borderRadius: '8px',
-              }}
-              title="Undo last action"
-            >
-              {isUndoing ? <Icons.Loader2 className="animate-spin" size={14} /> : 'Undo'}
-            </button>
 
-            <button 
-              onClick={() => setIsUndoPinned(!isUndoPinned)}
-              style={{ 
-                background: isUndoPinned ? 'var(--accent-primary)' : 'none', 
-                border: 'none', 
-                color: isUndoPinned ? 'white' : 'var(--text-secondary)', 
-                cursor: 'pointer', 
-                padding: '0.4rem',
-                borderRadius: '6px',
-                display: 'flex'
-              }}
-              title={isUndoPinned ? "Pinned (forever)" : "Pin to keep open"}
-            >
-              <Icons.Pin size={16} style={{ transform: isUndoPinned ? 'rotate(45deg)' : 'none' }} />
-            </button>
-
-            <button 
-              onClick={() => setShowUndoToast(false)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.4rem', display: 'flex' }}
-              title="Dismiss"
-            >
-              <Icons.X size={18} />
-            </button>
+            {redoCount > 0 && lastRedoDescription && (
+               <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', borderTop: '1px solid var(--glass-border)', paddingTop: '0.5rem' }}>
+                 Next Redo: {lastRedoDescription}
+               </p>
+            )}
           </div>
         </div>
       )}

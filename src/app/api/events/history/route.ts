@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import { getHistoryCount } from '@/lib/events-manager'
+import { getHistoryStatus } from '@/lib/events-manager'
 
 export async function GET() {
   try {
     const session = await getSession()
     if (!session || !session.userId) {
-      return NextResponse.json({ count: 0, lastDescription: null })
+      return NextResponse.json({ success: false, undoCount: 0, redoCount: 0 })
     }
 
-    const result = await getHistoryCount(session.userId as string)
-    return NextResponse.json(result)
+    const status = await getHistoryStatus(session.userId as string)
+    return NextResponse.json(status)
   } catch (error) {
-    console.error('Error fetching history count:', error)
-    return NextResponse.json({ count: 0, lastDescription: null })
+    console.error('Error fetching history status:', error)
+    return NextResponse.json({ success: false, undoCount: 0, redoCount: 0 })
   }
 }

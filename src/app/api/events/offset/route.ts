@@ -37,12 +37,22 @@ export async function POST(request: Request) {
     })
 
     // Record HISTORY for OFFSET
-    await recordHistory(session.userId, 'OFFSET', {
-      scheduleId,
-      afterTime: fromEvent.time.toISOString(),
-      offsetMinutes: deltaMinutes,
-      originalScheduleStartDate: schedule?.startDate?.toISOString()
-    }, `Shifted future doses`)
+    const oldStartDate = schedule?.startDate?.toISOString()
+    const newStartDate = schedule?.startDate ? new Date(schedule.startDate.getTime() + deltaMs).toISOString() : undefined
+
+    await recordHistory(session.userId, 'OFFSET', 
+      {
+        scheduleId,
+        offsetMinutes: -deltaMinutes,
+        scheduleStartDate: oldStartDate
+      },
+      {
+        scheduleId,
+        offsetMinutes: deltaMinutes,
+        scheduleStartDate: newStartDate
+      },
+      `Shifted future doses`
+    )
 
     // Update all in a transaction
     await prisma.$transaction(
