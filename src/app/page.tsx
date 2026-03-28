@@ -107,7 +107,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (administeringMed && !adminTimeStr) {
       const pad = (n: number) => n.toString().padStart(2, '0')
-      const d = new Date()
+      let d = new Date()
+      if (administeringMed.status === 'SKIPPED' && administeringMed.time) {
+        d = new Date(administeringMed.originalTime || administeringMed.time)
+      }
       setAdminTimeStr(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
     }
   }, [administeringMed])
