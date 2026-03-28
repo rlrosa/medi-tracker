@@ -269,6 +269,11 @@ export default function Dashboard() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <h3 style={{ fontSize: '1.25rem' }}>{med.name}</h3>
+                        {med.warningType && (
+                           <div style={{ display: 'flex', alignItems: 'center' }} title={`Predicted Violation: ${med.warningType}`}>
+                             <Icons.AlertTriangle size={18} color="var(--danger)" />
+                           </div>
+                        )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                           {med.patient && <span style={{ fontSize: '0.7rem', background: 'var(--bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.patient.name}</span>}
                           {med.scheduleName && <span style={{ fontSize: '0.7rem', background: 'var(--accent-primary)', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{med.scheduleName}</span>}

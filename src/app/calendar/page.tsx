@@ -743,6 +743,30 @@ export default function CalendarView() {
                       </div>
                     ))}
 
+                    {/* Current Time Indicator */}
+                    {now.toDateString() === date.toDateString() && (
+                      <div style={{
+                        position: 'absolute',
+                        top: `${((now.getHours() * 60 + now.getMinutes()) / 1440) * 100}%`,
+                        left: 0, right: 0,
+                        borderTop: '2px dashed var(--success)',
+                        zIndex: 50,
+                        pointerEvents: 'none',
+                        opacity: 0.8
+                      }}>
+                        <div style={{
+                          position: 'absolute',
+                          left: '-4px',
+                          top: '-4px',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: 'var(--success)',
+                          boxShadow: '0 0 8px var(--success)'
+                        }}></div>
+                      </div>
+                    )}
+
                     {/* Meds */}
                     {sorted.map((item, mIdx) => {
                       const minutes = item.displayTime.getHours() * 60 + item.displayTime.getMinutes()

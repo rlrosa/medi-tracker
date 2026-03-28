@@ -28,7 +28,6 @@ export async function GET(request: Request) {
         },
         status: 'PENDING',
         time: {
-          gte: new Date(startDate.getTime() - 24 * 60 * 60 * 1000), // Include overdue from last 24h
           lte: futureLimit
         }
       },
