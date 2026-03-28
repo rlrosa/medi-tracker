@@ -16,10 +16,18 @@ export async function DELETE(
   try {
     const relationship = await prisma.medicationRelationship.findUnique({
       where: { id },
-      include: { medicationA: { include: { patient: true } } }
+      include: { 
+        medicationA: { include: { patient: true } },
+        medicationB: { include: { patient: true } }
+      }
     })
 
-    if (!relationship || relationship.medicationA.patient?.accountId !== session.accountId) {
+    const isAuthorized = relationship && (
+      relationship.medicationA.patient?.accountId === session.accountId ||
+      relationship.medicationB.patient?.accountId === session.accountId
+    )
+
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Relationship not found or unauthorized' }, { status: 404 })
     }
 

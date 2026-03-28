@@ -21,10 +21,11 @@ export default function PatientPage() {
     valueMinutes: '',
     medicationBId: ''
   })
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
-    const res = await fetch(`/api/patients/${patientId}`)
+    const res = await fetch(`/api/patients/${patientId}`, { cache: 'no-store' })
     if (res.ok) {
       const data = await res.json()
       setPatient(data.patient)
@@ -78,10 +79,10 @@ export default function PatientPage() {
   }
 
   const handleDeleteRule = async (relationshipId: string) => {
-    if (!confirm('Are you sure you want to delete this rule?')) return
     try {
       const res = await fetch(`/api/relationships/${relationshipId}`, { method: 'DELETE' })
       if (res.ok) {
+        setConfirmingId(null)
         fetchData()
       } else {
         const err = await res.json()
@@ -182,9 +183,22 @@ export default function PatientPage() {
                         <strong>{timeStr}</strong>{' '}
                         of <strong>{getMedName(rel.medicationBId)}</strong>
                       </div>
-                      <button onClick={() => handleDeleteRule(rel.id)} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', background: 'transparent' }}>
-                        Remove
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {confirmingId === rel.id ? (
+                          <>
+                            <button onClick={() => handleDeleteRule(rel.id)} className="btn btn-primary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', background: 'var(--danger)' }}>
+                              Confirm
+                            </button>
+                            <button onClick={() => setConfirmingId(null)} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => setConfirmingId(rel.id)} className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', background: 'transparent' }}>
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
