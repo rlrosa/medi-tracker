@@ -83,6 +83,7 @@ export async function POST(request: Request) {
           where: { id: event.id },
           data: {
             time: new Date(event.time.getTime() + deltaMs),
+            originalTime: event.originalTime ? new Date(event.originalTime.getTime() + deltaMs) : new Date(event.time.getTime() + deltaMs),
             warningType: event.id === fromEventId ? warningType : undefined,
             isOverride: isOverride || false
           }
