@@ -39,6 +39,7 @@ export async function POST(request: Request) {
 
     // 3. WARNING CHECK (Check first event at new time)
     let warningType = null
+    let warningMessage = null
     if (fromEvent && !isOverride) {
       const newTime = new Date(fromEvent.time.getTime() + deltaMinutes * 60000)
       const violations = await checkViolations(
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
     } else if (isOverride) {
       // For simplicity, we just mark the first event if overridden
       warningType = 'OFFSET_VIOLATION'
+      warningMessage = `This schedule was manually offset by ${deltaMinutes / 60} hours.`
     }
 
     // Record HISTORY for OFFSET
@@ -85,6 +87,7 @@ export async function POST(request: Request) {
             time: new Date(event.time.getTime() + deltaMs),
             originalTime: event.originalTime ? new Date(event.originalTime.getTime() + deltaMs) : new Date(event.time.getTime() + deltaMs),
             warningType: event.id === fromEventId ? warningType : undefined,
+            warningMessage: event.id === fromEventId ? warningMessage : undefined,
             isOverride: isOverride || false
           }
         })

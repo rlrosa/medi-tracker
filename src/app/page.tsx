@@ -47,6 +47,12 @@ export default function Dashboard() {
     if (type === 'OFFSET_VIOLATION' || type === 'OVERRIDE') msg = "This dose was manually offset from its optimal schedule, deviating from the baseline rhythm.";
     if (type === 'RELATIONSHIP') msg = "This dose conflicts with a defined medication relationship rule.";
     
+    if (med.warningMessage) {
+      msg += `\n\nDetail: ${med.warningMessage}`
+    } else if (med.log?.warningMessage) {
+      msg += `\n\nDetail: ${med.log.warningMessage}`
+    }
+
     setViolationDetail({ title: "Schedule Violation", message: msg });
   }
 
@@ -546,6 +552,22 @@ export default function Dashboard() {
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
               Are you sure you want to log <strong>{administeringMed.name}</strong> for <strong>{administeringMed.patient?.name}</strong>?
             </p>
+
+            {(administeringMed.warningType || administeringMed.isOverride) && (
+              <div style={{ marginBottom: '1.5rem', padding: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', color: '#f59e0b', fontSize: '0.9rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <Icons.AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong>Predicted Violation ({administeringMed.warningType || 'OVERRIDE'})</strong>
+                  <p style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.85)' }}>
+                    {administeringMed.warningMessage || administeringMed.log?.warningMessage || (
+                      administeringMed.warningType === 'INTERVAL' ? 'Violates minimum required time interval.' :
+                      administeringMed.warningType === 'OFFSET_VIOLATION' || administeringMed.isOverride ? 'Manually offset from optimal schedule.' :
+                      administeringMed.warningType === 'RELATIONSHIP' ? 'Conflicts with a relationship rule.' : 'Schedule deviation detected.'
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex-col" style={{ gap: '1rem' }}>
               {accountUsers.length > 0 && (

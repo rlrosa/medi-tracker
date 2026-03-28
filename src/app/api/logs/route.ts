@@ -114,6 +114,7 @@ export async function POST(request: Request) {
 
     // 3. WARNING CHECK
     let warningType = null
+    let warningMessage = null
     if (status !== 'SKIPPED') {
       const targetTime = new Date(String(administeredAt))
       const violations = await checkViolations(
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
           }, { status: 409 })
         }
         warningType = violations[0].type
+        warningMessage = violations[0].message
       }
     }
 
@@ -144,6 +146,7 @@ export async function POST(request: Request) {
         notes: typeof notes === 'string' && notes ? notes : null,
         eventId: finalEventId || null,
         warningType: warningType,
+        warningMessage: warningMessage,
         isOverride: isOverride || false
       }
     })

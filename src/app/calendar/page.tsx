@@ -987,6 +987,21 @@ export default function CalendarView() {
                       {selectedEntry.log.notes && <p style={{ fontStyle: 'italic', marginTop: '0.2rem' }}>"{selectedEntry.log.notes}"</p>}
                     </div>
                   )}
+                  {(selectedEntry.warningType || selectedEntry.isOverride || selectedEntry.log?.warningType || selectedEntry.log?.isOverride) && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', color: '#f59e0b', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <Icons.AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <strong>Predicted Violation</strong>
+                        <p style={{ marginTop: '0.2rem', color: 'rgba(255,255,255,0.85)' }}>
+                          {selectedEntry.warningMessage || selectedEntry.log?.warningMessage || (
+                            selectedEntry.warningType === 'INTERVAL' ? 'Violates minimum required time interval.' :
+                            selectedEntry.warningType === 'OFFSET_VIOLATION' || selectedEntry.isOverride ? 'Manually offset from optimal schedule.' :
+                            selectedEntry.warningType === 'RELATIONSHIP' ? 'Conflicts with a relationship rule.' : 'Schedule deviation detected.'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1161,6 +1176,22 @@ export default function CalendarView() {
           <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>{administeringMed.status === 'SKIPPED' ? 'Confirm Skip' : 'Confirm Administration'}</h3>
             
+            {(administeringMed.warningType || administeringMed.isOverride) && (
+              <div style={{ marginBottom: '1.5rem', padding: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', color: '#f59e0b', fontSize: '0.9rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <Icons.AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong>Violation Warning ({administeringMed.warningType || 'OVERRIDE'})</strong>
+                  <p style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.85)' }}>
+                    {administeringMed.warningMessage || administeringMed.log?.warningMessage || (
+                      administeringMed.warningType === 'INTERVAL' ? 'Violates minimum required time interval.' :
+                      administeringMed.warningType === 'OFFSET_VIOLATION' || administeringMed.isOverride ? 'Manually offset from optimal schedule.' :
+                      administeringMed.warningType === 'RELATIONSHIP' ? 'Conflicts with a relationship rule.' : 'Schedule deviation detected.'
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex-col" style={{ gap: '1rem' }}>
               {accountUsers.length > 0 && administeringMed.status !== 'SKIPPED' && (
                 <div>

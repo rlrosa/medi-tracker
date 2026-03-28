@@ -80,6 +80,7 @@ export async function PATCH(
 
     // 3. WARNING CHECK (Internal & Relationships)
     let warningType = null
+    let warningMessage = null
     if (time) {
       const newTime = new Date(time)
       const violations = await checkViolations(
@@ -97,6 +98,7 @@ export async function PATCH(
         }
         // If override, we store the first violation type for visual marking
         warningType = violations[0].type
+        warningMessage = violations[0].message
       }
     }
 
@@ -115,6 +117,7 @@ export async function PATCH(
         time: time ? new Date(time) : undefined,
         status: status || undefined,
         warningType: warningType,
+        warningMessage: warningMessage,
         isOverride: isOverride || false
       }
     })

@@ -111,6 +111,7 @@ model MedicationEvent {
   originalTime DateTime?
   status       String             @default("PENDING")
   warningType  String?
+  warningMessage String?
   isOverride   Boolean            @default(false)
   createdAt    DateTime           @default(now())
   log          AdministrationLog? @relation("EventToLog")
@@ -127,6 +128,7 @@ model AdministrationLog {
   administeredByUserId String?
   notes                String?
   warningType          String?
+  warningMessage       String?
   isOverride           Boolean             @default(false)
   createdAt            DateTime            @default(now())
   scheduledAt          DateTime?
