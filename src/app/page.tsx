@@ -109,7 +109,7 @@ export default function Dashboard() {
       const pad = (n: number) => n.toString().padStart(2, '0')
       let d = new Date()
       if (administeringMed.status === 'SKIPPED') {
-        const scheduledTimeStr = administeringMed.originalTime || administeringMed.time || administeringMed.nextDue || administeringMed.displayTime
+        const scheduledTimeStr = administeringMed.scheduledAt || administeringMed.displayTime || administeringMed.nextDue || administeringMed.time || administeringMed.originalTime
         if (scheduledTimeStr) {
           d = new Date(scheduledTimeStr)
         }
