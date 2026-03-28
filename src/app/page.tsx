@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Icons from 'lucide-react'
 import { ConflictModal, ConflictData } from '@/components/ConflictModal'
+import { AmbiguityModal, AmbiguityData } from '@/components/AmbiguityModal'
 export default function Dashboard() {
   const router = useRouter()
   const { muteAudio } = useSettings()
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [selectedLog, setSelectedLog] = useState<any>(null)
   
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
+  const [ambiguityData, setAmbiguityData] = useState<AmbiguityData | null>(null)
   const [isOverride, setIsOverride] = useState(false)
 
   // Reset override if the user changes the medication or time
@@ -165,6 +167,12 @@ export default function Dashboard() {
             message: data.message,
             violations: data.violations,
             action: 'ADMINISTER',
+            data: payload
+          })
+        } else if (res.status === 409 && data.error === 'AMBIGUOUS_EVENT') {
+          setAmbiguityData({
+            pastEvent: data.pastEvent,
+            futureEvent: data.futureEvent,
             data: payload
           })
         } else {
@@ -624,6 +632,21 @@ export default function Dashboard() {
           onOverride={(action, data) => {
             setConflictData(null)
             setIsOverride(true)
+            setTimeout(() => {
+                const submitBtn = document.getElementById('submit-administer-btn');
+                if (submitBtn) submitBtn.click();
+            }, 100);
+          }}
+        />
+      )}
+
+      {ambiguityData && (
+        <AmbiguityModal
+          ambiguityData={ambiguityData}
+          onCancel={() => setAmbiguityData(null)}
+          onResolve={(selectedEventId) => {
+            setAmbiguityData(null)
+            setAdministeringMed({ ...administeringMed, eventId: selectedEventId })
             setTimeout(() => {
                 const submitBtn = document.getElementById('submit-administer-btn');
                 if (submitBtn) submitBtn.click();

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { checkViolations } from '@/lib/warning-engine'
+import { evaluateAmbiguity, resolveAndAutoSkip } from '@/lib/ambiguity-detector'
 
 export async function GET(request: Request) {
   const session = await getSession()
@@ -95,13 +96,29 @@ export async function POST(request: Request) {
       finalUserId = administeredByUserId
     }
 
+    let finalEventId = eventId || null;
+
+    if (!finalEventId && status !== 'SKIPPED') {
+      const ambiguityRes = await evaluateAmbiguity(String(medicationId), new Date(String(administeredAt)), scheduleId ? String(scheduleId) : null);
+      if (ambiguityRes.isAmbiguous) {
+        return NextResponse.json({
+          error: 'AMBIGUOUS_EVENT',
+          pastEvent: ambiguityRes.pastEvent,
+          futureEvent: ambiguityRes.futureEvent
+        }, { status: 409 });
+      }
+      if (ambiguityRes.selectedEventId) {
+        finalEventId = ambiguityRes.selectedEventId;
+      }
+    }
+
     // 3. WARNING CHECK
     let warningType = null
     if (status !== 'SKIPPED') {
       const targetTime = new Date(String(administeredAt))
       const violations = await checkViolations(
         medication.patientId as string,
-        { medicationId: String(medicationId), time: targetTime, id: eventId }
+        { medicationId: String(medicationId), time: targetTime, id: finalEventId }
       )
 
       if (violations.length > 0) {
@@ -125,19 +142,22 @@ export async function POST(request: Request) {
         scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
         notes: typeof notes === 'string' && notes ? notes : null,
-        eventId: eventId || null,
+        eventId: finalEventId || null,
         warningType: warningType,
         isOverride: isOverride || false
       }
     })
 
-    if (eventId) {
+    if (finalEventId) {
       await prisma.medicationEvent.update({
-        where: { id: eventId },
+        where: { id: finalEventId },
         data: {
           status: status === 'SKIPPED' ? 'SKIPPED' : 'COMPLETED'
         }
       })
+      if (status !== 'SKIPPED') {
+         await resolveAndAutoSkip(String(medicationId), finalEventId, scheduleId ? String(scheduleId) : null);
+      }
     }
 
     return NextResponse.json({ log })

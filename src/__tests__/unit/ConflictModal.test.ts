@@ -14,7 +14,7 @@ describe('ConflictModal Logic', () => {
   })
 
   it('should have two buttons when action is MOVE', () => {
-    const action = 'MOVE'
+    const action: string = 'MOVE'
     const gridColumns = action === 'ADMINISTER' ? '1fr' : '1fr 1fr'
     const showCancel = action !== 'ADMINISTER'
     const buttonText = action === 'ADMINISTER' ? 'Acknowledge Warning' : 'Override'
@@ -25,7 +25,7 @@ describe('ConflictModal Logic', () => {
   })
 
   it('should have two buttons when action is OFFSET', () => {
-    const action = 'OFFSET'
+    const action: string = 'OFFSET'
     const gridColumns = action === 'ADMINISTER' ? '1fr' : '1fr 1fr'
     const showCancel = action !== 'ADMINISTER'
     const buttonText = action === 'ADMINISTER' ? 'Acknowledge Warning' : 'Override'

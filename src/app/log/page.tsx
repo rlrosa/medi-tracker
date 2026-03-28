@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Navigation } from '@/components/Navigation'
 import { ConflictModal, ConflictData } from '@/components/ConflictModal'
+import { AmbiguityModal, AmbiguityData } from '@/components/AmbiguityModal'
 
 function LogForm() {
   const router = useRouter()
@@ -12,6 +13,7 @@ function LogForm() {
   const [user, setUser] = useState<any>(null)
   const [usersList, setUsersList] = useState<any[]>([])
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
+  const [ambiguityData, setAmbiguityData] = useState<AmbiguityData | null>(null)
   const [isOverride, setIsOverride] = useState(false)
   
   // Prefill from search params
@@ -85,6 +87,12 @@ function LogForm() {
           action: 'ADMINISTER',
           data: payload
         })
+      } else if (res.status === 409 && data.error === 'AMBIGUOUS_EVENT') {
+        setAmbiguityData({
+          pastEvent: data.pastEvent,
+          futureEvent: data.futureEvent,
+          data: payload
+        })
       } else {
         alert(data.error || 'Failed to log administration')
       }
@@ -143,6 +151,21 @@ function LogForm() {
           onOverride={(action, data) => {
             setConflictData(null)
             setIsOverride(true)
+            setTimeout(() => {
+                const submitBtn = document.getElementById('submit-administer-btn');
+                if (submitBtn) submitBtn.click();
+            }, 100);
+          }}
+        />
+      )}
+
+      {ambiguityData && (
+        <AmbiguityModal
+          ambiguityData={ambiguityData}
+          onCancel={() => setAmbiguityData(null)}
+          onResolve={(selectedEventId) => {
+            setAmbiguityData(null)
+            setForm({ ...form, eventId: selectedEventId })
             setTimeout(() => {
                 const submitBtn = document.getElementById('submit-administer-btn');
                 if (submitBtn) submitBtn.click();
