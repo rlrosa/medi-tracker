@@ -185,6 +185,7 @@ export default function CalendarView() {
           const conflict = await res.json()
           setConflictData({ ...conflict, action: 'MOVE', data })
           setIsUpdating(false)
+          setShowMoveModal(false)
           return
         }
         if (!res.ok) throw new Error('Failed to update event')
@@ -204,6 +205,7 @@ export default function CalendarView() {
           const conflict = await res.json()
           setConflictData({ ...conflict, action: 'OFFSET', data })
           setIsUpdating(false)
+          setShowMoveModal(false)
           return
         }
         if (!res.ok) throw new Error('Failed to offset events')

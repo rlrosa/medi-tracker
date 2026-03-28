@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -8,7 +8,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,7 +74,7 @@ export default function LoginPage() {
             <input 
               type="text" 
               className="input-field" 
-              placeholder="Username (e.g. rr)"
+              placeholder={isMounted ? "Username" : ""}
               value={email}
               autoFocus
               onChange={e => setEmail(e.target.value)}
