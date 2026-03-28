@@ -5,8 +5,7 @@ import { useSettings } from '@/components/ThemeProvider'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Icons from 'lucide-react'
-
-
+import { ConflictModal, ConflictData } from '@/components/ConflictModal'
 export default function Dashboard() {
   const router = useRouter()
   const { muteAudio } = useSettings()
@@ -33,6 +32,9 @@ export default function Dashboard() {
   const [selectedCaregiverId, setSelectedCaregiverId] = useState('')
   const [snoozingMed, setSnoozingMed] = useState<any>(null)
   const [selectedLog, setSelectedLog] = useState<any>(null)
+  
+  const [conflictData, setConflictData] = useState<ConflictData | null>(null)
+  const [isOverride, setIsOverride] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -131,16 +133,28 @@ export default function Dashboard() {
         body: JSON.stringify({
           ...payload,
           scheduleId: administeringMed.scheduleId,
-          status: administeringMed.status || 'ADMINISTERED'
+          status: administeringMed.status || 'ADMINISTERED',
+          isOverride
         })
       })
       if (res.ok) {
         setAdministeringMed(null)
         setAdministerNotes('')
+        setIsOverride(false)
         fetchData()
       } else {
-        console.error('Failed to administer medication:', res.status, await res.text());
-        alert('Failed to administer medication.');
+        const data = await res.json()
+        if (res.status === 409 && data.error === 'CONFLICT') {
+          setConflictData({
+            message: data.message,
+            violations: data.violations,
+            action: 'ADMINISTER',
+            data: payload
+          })
+        } else {
+          console.error('Failed to administer medication:', res.status, data);
+          alert(data.error || 'Failed to administer medication.');
+        }
       }
     } catch (error) {
       console.error('Error administering medication:', error);
@@ -524,7 +538,7 @@ export default function Dashboard() {
                 >
                   Cancel
                 </button>
-                <button 
+                <button id="submit-administer-btn"
                   className="btn btn-success" 
                   onClick={handleAdminister}
                   style={{ flex: 2 }}
@@ -571,6 +585,24 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {conflictData && (
+        <ConflictModal
+          conflictData={conflictData}
+          onCancel={() => {
+            setConflictData(null)
+            setIsOverride(false)
+          }}
+          onOverride={(action, data) => {
+            setConflictData(null)
+            setIsOverride(true)
+            setTimeout(() => {
+                const submitBtn = document.getElementById('submit-administer-btn');
+                if (submitBtn) submitBtn.click();
+            }, 100);
+          }}
+        />
       )}
 
     </main>

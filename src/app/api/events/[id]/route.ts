@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { recordHistory } from '@/lib/events-manager'
+import { checkViolations } from '@/lib/warning-engine'
 
 export async function PATCH(
   request: Request,
@@ -13,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { time, status, isLastInstance } = await request.json()
+    const { time, status, isLastInstance, isOverride } = await request.json()
     const { id: eventId } = await params
 
     const event = await prisma.medicationEvent.findUnique({
@@ -77,6 +78,28 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: 'Schedule ended after this instance' })
     }
 
+    // 3. WARNING CHECK (Internal & Relationships)
+    let warningType = null
+    if (time) {
+      const newTime = new Date(time)
+      const violations = await checkViolations(
+        medication.patientId as string,
+        { medicationId: event.medicationId, time: newTime, id: eventId }
+      )
+
+      if (violations.length > 0) {
+        if (!isOverride) {
+          return NextResponse.json({ 
+            error: 'CONFLICT', 
+            message: 'Medication window violation detected',
+            violations 
+          }, { status: 409 })
+        }
+        // If override, we store the first violation type for visual marking
+        warningType = violations[0].type
+      }
+    }
+
     // Record HISTORY for MOVE
     if (time) {
       await recordHistory(session.userId, 'MOVE', 
@@ -90,7 +113,9 @@ export async function PATCH(
       where: { id: eventId },
       data: {
         time: time ? new Date(time) : undefined,
-        status: status || undefined
+        status: status || undefined,
+        warningType: warningType,
+        isOverride: isOverride || false
       }
     })
 

@@ -4,6 +4,7 @@ import { Navigation } from '@/components/Navigation'
 import { useRouter } from 'next/navigation'
 import * as Icons from 'lucide-react'
 import Link from 'next/link'
+import { ConflictModal, ConflictData } from '@/components/ConflictModal'
 
 export default function CalendarView() {
   const router = useRouter()
@@ -39,6 +40,7 @@ export default function CalendarView() {
   const [rememberMove, setRememberMove] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingEvent, setDeletingEvent] = useState<any>(null)
+  const [conflictData, setConflictData] = useState<any>(null)
 
   // Undo State
   const [lastActionDescription, setLastActionDescription] = useState<string | null>(null)
@@ -158,8 +160,17 @@ export default function CalendarView() {
         const res = await fetch(`/api/events/${data.eventId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ time: data.newTime.toISOString() })
+          body: JSON.stringify({ 
+            time: data.newTime.toISOString(),
+            isOverride: currentMovement?.isOverride
+          })
         })
+        if (res.status === 409) {
+          const conflict = await res.json()
+          setConflictData({ ...conflict, action: 'MOVE', data })
+          setIsUpdating(false)
+          return
+        }
         if (!res.ok) throw new Error('Failed to update event')
       } else if (mode === 'OFFSET') {
         const deltaMinutes = Math.round((data.newTime.getTime() - new Date(data.originalTime).getTime()) / 60000)
@@ -169,9 +180,16 @@ export default function CalendarView() {
           body: JSON.stringify({ 
             scheduleId: data.scheduleId,
             fromEventId: data.eventId,
-            deltaMinutes
+            deltaMinutes,
+            isOverride: currentMovement?.isOverride
           })
         })
+        if (res.status === 409) {
+          const conflict = await res.json()
+          setConflictData({ ...conflict, action: 'OFFSET', data })
+          setIsUpdating(false)
+          return
+        }
         if (!res.ok) throw new Error('Failed to offset events')
       }
       
@@ -397,9 +415,16 @@ export default function CalendarView() {
         body: JSON.stringify({
           ...payload,
           scheduleId: administeringMed.scheduleId,
-          status: administeringMed.status || 'ADMINISTERED'
+          status: administeringMed.status || 'ADMINISTERED',
+          isOverride: administeringMed.isOverride
         })
       })
+      if (res.status === 409) {
+        const conflict = await res.json()
+        setConflictData({ ...conflict, action: 'ADMINISTER', data: administeringMed })
+        setAdministerLoading(false)
+        return
+      }
       if (res.ok) {
         setAdministeringMed(null)
         setSelectedEntry(null)
@@ -768,6 +793,13 @@ export default function CalendarView() {
                                 {item.name}
                                 {item.type === 'MISSED' && <span style={{ color: '#ef4444', marginLeft: '4px' }}>(Missed)</span>}
                                 {item.type === 'LOGGED' && item.log.status === 'SKIPPED' && <span style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>(Skipped)</span>}
+                                {(item.warningType || item.isOverride || item.log?.warningType || item.log?.isOverride) && (
+                                  <Icons.AlertTriangle 
+                                    size={12} 
+                                    style={{ color: '#f59e0b', marginLeft: '4px' }} 
+                                    className="warning-pulse"
+                                  />
+                                )}
                               </span>
                             </div>
                             
@@ -1298,6 +1330,26 @@ export default function CalendarView() {
             )}
           </div>
         </div>
+      )}
+      {conflictData && (
+        <ConflictModal
+          conflictData={conflictData}
+          onCancel={() => setConflictData(null)}
+          onOverride={(action, data) => {
+            setConflictData(null)
+            if (action === 'MOVE') {
+              handleMoveEvent('SINGLE', { ...data, isOverride: true })
+            } else if (action === 'OFFSET') {
+              handleMoveEvent('OFFSET', { ...data, isOverride: true })
+            } else if (action === 'ADMINISTER') {
+              setAdministeringMed({ ...data, isOverride: true })
+              setTimeout(() => {
+                  const submitBtn = document.getElementById('submit-administer-btn');
+                  if (submitBtn) submitBtn.click();
+              }, 100);
+            }
+          }}
+        />
       )}
     </main>
   )

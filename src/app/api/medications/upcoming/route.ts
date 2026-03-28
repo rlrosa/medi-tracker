@@ -58,7 +58,9 @@ export async function GET(request: Request) {
       nextDue: event.time,
       isOverdue: event.time < now,
       instanceId: event.id, // Now using the real DB ID
-      originalTime: event.originalTime
+      originalTime: event.originalTime,
+      warningType: (event as any).warningType,
+      isOverride: (event as any).isOverride
     }))
 
     // Sort: Overdue FIRST, then by time

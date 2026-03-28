@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Navigation } from '@/components/Navigation'
+import { ConflictModal, ConflictData } from '@/components/ConflictModal'
 
 function LogForm() {
   const router = useRouter()
@@ -10,6 +11,8 @@ function LogForm() {
   const [meds, setMeds] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [usersList, setUsersList] = useState<any[]>([])
+  const [conflictData, setConflictData] = useState<ConflictData | null>(null)
+  const [isOverride, setIsOverride] = useState(false)
   
   // Prefill from search params
   const initialMedId = searchParams.get('medicationId') || ''
@@ -52,7 +55,8 @@ function LogForm() {
     const payload = {
       ...form,
       administeredAt: form.administeredAt ? new Date(form.administeredAt).toISOString() : new Date().toISOString(),
-      scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null
+      scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null,
+      isOverride
     }
 
     const res = await fetch('/api/logs', {
@@ -67,7 +71,16 @@ function LogForm() {
       router.refresh()
     } else {
       const data = await res.json()
-      alert(data.error || 'Failed to log administration')
+      if (res.status === 409 && data.error === 'CONFLICT') {
+        setConflictData({
+          message: data.message,
+          violations: data.violations,
+          action: 'ADMINISTER',
+          data: payload
+        })
+      } else {
+        alert(data.error || 'Failed to log administration')
+      }
     }
   }
 
@@ -108,10 +121,28 @@ function LogForm() {
           <input type="text" className="input-field" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
         </div>
 
-        <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+        <button id="submit-administer-btn" type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: '1rem' }}>
           {loading ? 'Logging...' : 'Log Administration'}
         </button>
       </form>
+      
+      {conflictData && (
+        <ConflictModal
+          conflictData={conflictData}
+          onCancel={() => {
+            setConflictData(null)
+            setIsOverride(false)
+          }}
+          onOverride={(action, data) => {
+            setConflictData(null)
+            setIsOverride(true)
+            setTimeout(() => {
+                const submitBtn = document.getElementById('submit-administer-btn');
+                if (submitBtn) submitBtn.click();
+            }, 100);
+          }}
+        />
+      )}
     </div>
   )
 }

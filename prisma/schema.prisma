@@ -33,14 +33,14 @@ model User {
 }
 
 model MedicationEventHistory {
-  id           String   @id @default(cuid())
-  userId       String
-  actionType   String   // MOVE, DELETE, OFFSET
-  description  String?
-  undoData     String   // JSON string
-  redoData     String?  // JSON string
-  isUndone     Boolean  @default(false)
-  timestamp    DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  actionType  String
+  description String?
+  undoData    String
+  redoData    String?
+  isUndone    Boolean  @default(false)
+  timestamp   DateTime @default(now())
 
   @@index([userId, timestamp])
 }
@@ -70,16 +70,20 @@ model Patient {
 }
 
 model Medication {
-  id        String               @id @default(cuid())
-  name      String
-  alias     String?
-  imageUrl  String?
-  createdAt DateTime             @default(now())
-  patientId String?
-  logs      AdministrationLog[]
-  patient   Patient?             @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  events    MedicationEvent[]
-  schedules MedicationSchedule[]
+  id                 String                   @id @default(cuid())
+  name               String
+  alias              String?
+  imageUrl           String?
+  createdAt          DateTime                 @default(now())
+  patientId          String?
+  maxIntervalMinutes Int?
+  minIntervalMinutes Int?
+  logs               AdministrationLog[]
+  patient            Patient?                 @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  events             MedicationEvent[]
+  relationshipsAsB   MedicationRelationship[] @relation("MedicationB")
+  relationshipsAsA   MedicationRelationship[] @relation("MedicationA")
+  schedules          MedicationSchedule[]
 }
 
 model MedicationSchedule {
@@ -106,10 +110,12 @@ model MedicationEvent {
   time         DateTime
   originalTime DateTime?
   status       String             @default("PENDING")
+  warningType  String?
+  isOverride   Boolean            @default(false)
   createdAt    DateTime           @default(now())
   log          AdministrationLog? @relation("EventToLog")
-  medication   Medication         @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   schedule     MedicationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  medication   Medication         @relation(fields: [medicationId], references: [id], onDelete: Cascade)
 }
 
 model AdministrationLog {
@@ -120,13 +126,26 @@ model AdministrationLog {
   administeredAt       DateTime
   administeredByUserId String?
   notes                String?
+  warningType          String?
+  isOverride           Boolean             @default(false)
   createdAt            DateTime            @default(now())
   scheduledAt          DateTime?
   eventId              String?             @unique
-  event                MedicationEvent?    @relation("EventToLog", fields: [eventId], references: [id])
-  schedule             MedicationSchedule? @relation(fields: [scheduleId], references: [id])
-  medication           Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   administeredByUser   User?               @relation(fields: [administeredByUserId], references: [id])
+  medication           Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  schedule             MedicationSchedule? @relation(fields: [scheduleId], references: [id])
+  event                MedicationEvent?    @relation("EventToLog", fields: [eventId], references: [id])
+}
+
+model MedicationRelationship {
+  id            String     @id @default(cuid())
+  medicationAId String
+  medicationBId String
+  type          String
+  valueMinutes  Int?
+  createdAt     DateTime   @default(now())
+  medicationB   Medication @relation("MedicationB", fields: [medicationBId], references: [id])
+  medicationA   Medication @relation("MedicationA", fields: [medicationAId], references: [id])
 }
 
 model Setting {

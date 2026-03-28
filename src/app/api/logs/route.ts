@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { checkViolations } from '@/lib/warning-engine'
 
 export async function GET(request: Request) {
   const session = await getSession()
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json()
-    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status, eventId } = data
+    const { medicationId, administeredAt, notes, administeredByUserId, scheduledAt, scheduleId, status, eventId, isOverride } = data
     
     // Verify medication belongs to the account
     const medication = await prisma.medication.findFirst({
@@ -94,6 +95,27 @@ export async function POST(request: Request) {
       finalUserId = administeredByUserId
     }
 
+    // 3. WARNING CHECK
+    let warningType = null
+    if (status !== 'SKIPPED') {
+      const targetTime = new Date(String(administeredAt))
+      const violations = await checkViolations(
+        medication.patientId as string,
+        { medicationId: String(medicationId), time: targetTime, id: eventId }
+      )
+
+      if (violations.length > 0) {
+        if (!isOverride) {
+          return NextResponse.json({ 
+            error: 'CONFLICT', 
+            message: 'Medication window violation detected',
+            violations 
+          }, { status: 409 })
+        }
+        warningType = violations[0].type
+      }
+    }
+
     const log = await prisma.administrationLog.create({
       data: {
         medicationId: String(medicationId),
@@ -103,7 +125,9 @@ export async function POST(request: Request) {
         scheduledAt: scheduledAt ? new Date(String(scheduledAt)) : null,
         administeredByUserId: finalUserId,
         notes: typeof notes === 'string' && notes ? notes : null,
-        eventId: eventId || null
+        eventId: eventId || null,
+        warningType: warningType,
+        isOverride: isOverride || false
       }
     })
 

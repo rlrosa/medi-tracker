@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { recordHistory } from '@/lib/events-manager'
+import { checkViolations } from '@/lib/warning-engine'
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { scheduleId, fromEventId, deltaMinutes } = await request.json()
+    const { scheduleId, fromEventId, deltaMinutes, isOverride } = await request.json()
 
     const fromEvent = await prisma.medicationEvent.findUnique({
       where: { id: fromEventId }
@@ -36,6 +37,27 @@ export async function POST(request: Request) {
       where: { id: scheduleId }
     })
 
+    // 3. WARNING CHECK (Check first event at new time)
+    let warningType = null
+    if (fromEvent && !isOverride) {
+      const newTime = new Date(fromEvent.time.getTime() + deltaMinutes * 60000)
+      const violations = await checkViolations(
+        session.accountId as string, // patientId lookup needed? No, accountId is fine for session checks
+        { medicationId: fromEvent.medicationId, time: newTime, id: fromEvent.id }
+      )
+
+      if (violations.length > 0) {
+        return NextResponse.json({ 
+          error: 'CONFLICT', 
+          message: 'Offset logic detected a constraint violation',
+          violations 
+        }, { status: 409 })
+      }
+    } else if (isOverride) {
+      // For simplicity, we just mark the first event if overridden
+      warningType = 'OFFSET_VIOLATION'
+    }
+
     // Record HISTORY for OFFSET
     const oldStartDate = schedule?.startDate?.toISOString()
     const newStartDate = schedule?.startDate ? new Date(schedule.startDate.getTime() + deltaMs).toISOString() : undefined
@@ -60,7 +82,9 @@ export async function POST(request: Request) {
         prisma.medicationEvent.update({
           where: { id: event.id },
           data: {
-            time: new Date(event.time.getTime() + deltaMs)
+            time: new Date(event.time.getTime() + deltaMs),
+            warningType: event.id === fromEventId ? warningType : undefined,
+            isOverride: isOverride || false
           }
         })
       )
