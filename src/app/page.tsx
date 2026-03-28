@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [dbError, setDbError] = useState<string | null>(null)
   const [administeringMed, setAdministeringMed] = useState<any>(null)
   const [administerNotes, setAdministerNotes] = useState('')
+  const [adminTimeStr, setAdminTimeStr] = useState('')
   const [administerLoading, setAdministerLoading] = useState(false)
   const [accountUsers, setAccountUsers] = useState<any[]>([])
   const [selectedCaregiverId, setSelectedCaregiverId] = useState('')
@@ -35,6 +36,11 @@ export default function Dashboard() {
   
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
   const [isOverride, setIsOverride] = useState(false)
+
+  // Reset override if the user changes the medication or time
+  useEffect(() => {
+    setIsOverride(false)
+  }, [administeringMed?.id, adminTimeStr])
 
   const fetchData = async () => {
     try {
@@ -96,6 +102,14 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (administeringMed && !adminTimeStr) {
+      const pad = (n: number) => n.toString().padStart(2, '0')
+      const d = new Date()
+      setAdminTimeStr(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+    }
+  }, [administeringMed])
+
   const requestPermissions = async () => {
     if ('Notification' in window) {
       const perm = await Notification.requestPermission()
@@ -121,7 +135,7 @@ export default function Dashboard() {
     try {
       const payload: any = {
         medicationId: administeringMed.id,
-        administeredAt: new Date().toISOString(),
+        administeredAt: adminTimeStr ? new Date(adminTimeStr).toISOString() : new Date().toISOString(),
         administeredByUserId: selectedCaregiverId
       };
       if (administeringMed.nextDue) payload.scheduledAt = administeringMed.nextDue;
@@ -133,6 +147,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           ...payload,
           scheduleId: administeringMed.scheduleId,
+          eventId: administeringMed.instanceId || administeringMed.eventId || null,
           status: administeringMed.status || 'ADMINISTERED',
           isOverride
         })
@@ -140,6 +155,7 @@ export default function Dashboard() {
       if (res.ok) {
         setAdministeringMed(null)
         setAdministerNotes('')
+        setAdminTimeStr('')
         setIsOverride(false)
         fetchData()
       } else {
@@ -273,7 +289,7 @@ export default function Dashboard() {
                               const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
                               return (
                                 <Link 
-                                  href={`/log?medicationId=${med.id}&administeredAt=${localISO}&notes=Overdue dose&scheduleId=${med.scheduleId}`}
+                                  href={`/log?medicationId=${med.id}&administeredAt=${localISO}&notes=Overdue dose&scheduleId=${med.scheduleId}&eventId=${med.instanceId || med.id}`}
                                   className="btn btn-danger"
                                   style={{ 
                                     padding: '0.6rem 1rem', 
@@ -519,6 +535,17 @@ export default function Dashboard() {
               )}
 
               <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Time</label>
+                <input 
+                  type="datetime-local" 
+                  className="input-field" 
+                  value={adminTimeStr}
+                  onChange={e => setAdminTimeStr(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Notes (Optional)</label>
                 <textarea 
                   className="input-field" 
@@ -533,7 +560,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                 <button 
                   className="btn" 
-                  onClick={() => setAdministeringMed(null)}
+                  onClick={() => { setAdministeringMed(null); setAdminTimeStr(''); setIsOverride(false); }}
                   style={{ flex: 1, background: 'var(--bg-secondary)' }}
                 >
                   Cancel

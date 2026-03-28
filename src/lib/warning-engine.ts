@@ -10,6 +10,14 @@ export interface Violation {
   eventB?: { name: string; time: Date }
 }
 
+function formatDuration(minutes: number): string {
+  const rounded = Math.round(minutes)
+  const h = Math.floor(rounded / 60)
+  const m = rounded % 60
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
 export async function checkViolations(
   patientId: string,
   targetEvent: { medicationId: string; time: Date; id?: string },
@@ -86,7 +94,7 @@ export async function checkViolations(
       violations.push({
         type: 'MIN_INTERVAL',
         medicationAId: medication.id,
-        message: `Too close to previous dose. Minimum interval is ${effectiveMinInterval}m, but found ${Math.round(diff)}m.`,
+        message: `Too close to previous dose. Minimum interval is ${formatDuration(effectiveMinInterval)}, but found ${formatDuration(diff)}.`,
         severity: 'WARNING',
         interactingEventId: prev.id
       })
@@ -101,7 +109,7 @@ export async function checkViolations(
       violations.push({
         type: 'MIN_INTERVAL',
         medicationAId: medication.id,
-        message: `Too close to next scheduled dose. Minimum interval is ${effectiveMinInterval}m, but found ${Math.round(diff)}m.`,
+        message: `Too close to next scheduled dose. Minimum interval is ${formatDuration(effectiveMinInterval)}, but found ${formatDuration(diff)}.`,
         severity: 'WARNING',
         interactingEventId: next.id
       })
@@ -121,7 +129,7 @@ export async function checkViolations(
             type: 'FAR_FROM',
             medicationAId: medication.id,
             medicationBId: rel.medicationBId,
-            message: `${medication.name} must be at least ${minVal}m away from ${rel.medicationB.name || 'other medication'}. Current gap: ${Math.round(diff)}m.`,
+            message: `${medication.name} must be at least ${formatDuration(minVal)} away from ${rel.medicationB.name || 'other medication'}. Current gap: ${formatDuration(diff)}.`,
             severity: 'WARNING',
             interactingEventId: other.id,
             eventB: { name: rel.medicationB.name || 'Other', time: other.time }
@@ -146,7 +154,7 @@ export async function checkViolations(
               type: 'NEAR_TO',
               medicationAId: medication.id,
               medicationBId: rel.medicationBId,
-              message: `${medication.name} must be within ${maxVal}m of ${rel.medicationB.name || 'other medication'}. Current gap: ${Math.round(diff)}m.`,
+              message: `${medication.name} must be within ${formatDuration(maxVal)} of ${rel.medicationB.name || 'other medication'}. Current gap: ${formatDuration(diff)}.`,
               severity: 'WARNING',
               interactingEventId: closest.id,
               eventB: { name: rel.medicationB.name || 'Other', time: closest.time }
@@ -170,7 +178,7 @@ export async function checkViolations(
             type: 'FAR_FROM',
             medicationAId: rel.medicationAId,
             medicationBId: medication.id,
-            message: `${rel.medicationA.name} must be at least ${minVal}m away from ${medication.name}. Current gap: ${Math.round(diff)}m.`,
+            message: `${rel.medicationA.name} must be at least ${formatDuration(minVal)} away from ${medication.name}. Current gap: ${formatDuration(diff)}.`,
             severity: 'WARNING',
             interactingEventId: other.id,
             eventB: { name: rel.medicationA.name || 'Other', time: other.time }
@@ -195,7 +203,7 @@ export async function checkViolations(
               type: 'NEAR_TO',
               medicationAId: rel.medicationAId,
               medicationBId: medication.id,
-              message: `${rel.medicationA.name} must be within ${maxVal}m of ${medication.name}. Current gap: ${Math.round(diff)}m.`,
+              message: `${rel.medicationA.name} must be within ${formatDuration(maxVal)} of ${medication.name}. Current gap: ${formatDuration(diff)}.`,
               severity: 'WARNING',
               interactingEventId: closest.id,
               eventB: { name: rel.medicationA.name || 'Other', time: closest.time }

@@ -54,20 +54,20 @@ export function ConflictModal({ conflictData, onCancel, onOverride }: ConflictMo
           </ul>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <button 
-            className="btn" 
-            style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
+        <div style={{ display: 'grid', gridTemplateColumns: conflictData.action === 'ADMINISTER' ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+            <button 
+              className="btn" 
+              style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
           <button 
             className="btn" 
             style={{ background: '#f59e0b', color: 'white' }}
             onClick={() => onOverride(conflictData.action, conflictData.data)}
           >
-            Override
+            {conflictData.action === 'ADMINISTER' ? 'Acknowledge Warning' : 'Override'}
           </button>
         </div>
         

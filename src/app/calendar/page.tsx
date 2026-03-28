@@ -29,6 +29,7 @@ export default function CalendarView() {
   const [selectedEntry, setSelectedEntry] = useState<any>(null)
   const [administeringMed, setAdministeringMed] = useState<any>(null)
   const [administerNotes, setAdministerNotes] = useState('')
+  const [adminTimeStr, setAdminTimeStr] = useState('')
   const [editedTime, setEditedTime] = useState('')
   const [administerLoading, setAdministerLoading] = useState(false)
   const [accountUsers, setAccountUsers] = useState<any[]>([])
@@ -41,6 +42,12 @@ export default function CalendarView() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingEvent, setDeletingEvent] = useState<any>(null)
   const [conflictData, setConflictData] = useState<any>(null)
+  const [isOverride, setIsOverride] = useState(false)
+
+  // Reset override if the user changes the medication or time
+  useEffect(() => {
+    setIsOverride(false)
+  }, [administeringMed?.id, adminTimeStr])
 
   // Undo State
   const [lastActionDescription, setLastActionDescription] = useState<string | null>(null)
@@ -108,6 +115,15 @@ export default function CalendarView() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (administeringMed && !adminTimeStr) {
+      const pad = (n: number) => n.toString().padStart(2, '0')
+      const d = new Date()
+      setAdminTimeStr(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+    }
+  }, [administeringMed])
+
 
   useEffect(() => {
     setIsMounted(true)
@@ -403,7 +419,7 @@ export default function CalendarView() {
     try {
       const payload: any = {
         medicationId: administeringMed.id,
-        administeredAt: new Date().toISOString(),
+        administeredAt: adminTimeStr ? new Date(adminTimeStr).toISOString() : new Date().toISOString(),
         administeredByUserId: selectedCaregiverId
       };
       if (administeringMed.nextDue) payload.scheduledAt = administeringMed.nextDue;
@@ -415,8 +431,9 @@ export default function CalendarView() {
         body: JSON.stringify({
           ...payload,
           scheduleId: administeringMed.scheduleId,
+          eventId: administeringMed.instanceId || administeringMed.eventId || administeringMed.log?.eventId || null,
           status: administeringMed.status || 'ADMINISTERED',
-          isOverride: administeringMed.isOverride
+          isOverride: isOverride
         })
       })
       if (res.status === 409) {
@@ -429,6 +446,8 @@ export default function CalendarView() {
         setAdministeringMed(null)
         setSelectedEntry(null)
         setAdministerNotes('')
+        setAdminTimeStr('')
+        setIsOverride(false)
         fetchData()
       } else {
         alert('Failed to administer medication.');
@@ -1114,6 +1133,17 @@ export default function CalendarView() {
               )}
 
               <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Time</label>
+                <input 
+                  type="datetime-local" 
+                  className="input-field" 
+                  value={adminTimeStr}
+                  onChange={e => setAdminTimeStr(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Notes (Optional)</label>
                 <textarea 
                   className="input-field" 
@@ -1125,10 +1155,10 @@ export default function CalendarView() {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button className="btn" onClick={() => setAdministeringMed(null)} style={{ flex: 1, background: 'var(--bg-secondary)' }}>
+                <button className="btn" onClick={() => { setAdministeringMed(null); setAdminTimeStr(''); setIsOverride(false); }} style={{ flex: 1, background: 'var(--bg-secondary)' }}>
                   Cancel
                 </button>
-                <button className="btn btn-success" onClick={handleAdminister} style={{ flex: 2 }} disabled={administerLoading}>
+                 <button id="submit-administer-btn" className="btn btn-success" onClick={handleAdminister} style={{ flex: 2 }} disabled={administerLoading}>
                   {administerLoading ? 'Saving...' : 'Confirm'}
                 </button>
               </div>
@@ -1342,7 +1372,7 @@ export default function CalendarView() {
             } else if (action === 'OFFSET') {
               handleMoveEvent('OFFSET', { ...data, isOverride: true })
             } else if (action === 'ADMINISTER') {
-              setAdministeringMed({ ...data, isOverride: true })
+              setIsOverride(true)
               setTimeout(() => {
                   const submitBtn = document.getElementById('submit-administer-btn');
                   if (submitBtn) submitBtn.click();

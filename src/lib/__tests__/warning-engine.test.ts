@@ -88,7 +88,7 @@ describe('Warning Engine', () => {
 
     expect(violations).toHaveLength(1)
     expect(violations[0].type).toBe('FAR_FROM')
-    expect(violations[0].message).toContain('at least 120m away from Med B')
+    expect(violations[0].message).toContain('at least 2h 0m away from Med B')
   })
 
   it('should detect a NEAR_TO violation', async () => {
@@ -123,7 +123,7 @@ describe('Warning Engine', () => {
 
     expect(violations).toHaveLength(1)
     expect(violations[0].type).toBe('NEAR_TO')
-    expect(violations[0].message).toContain('within 60m of Med B')
+    expect(violations[0].message).toContain('within 1h 0m of Med B')
   })
 
   it('should return no violations for a valid administration', async () => {
@@ -185,6 +185,6 @@ describe('Warning Engine', () => {
 
     expect(violations).toHaveLength(1)
     expect(violations[0].type).toBe('FAR_FROM')
-    expect(violations[0].message).toContain('Med A must be at least 120m away from Med B')
+    expect(violations[0].message).toContain('Med A must be at least 2h 0m away from Med B')
   })
 })

@@ -19,6 +19,7 @@ function LogForm() {
   const initialTime = searchParams.get('administeredAt') || ''
   const initialScheduledAt = searchParams.get('scheduledAt') || ''
   const initialScheduleId = searchParams.get('scheduleId') || ''
+  const initialEventId = searchParams.get('eventId') || ''
   const initialNotes = searchParams.get('notes') || ''
   const initialUserId = searchParams.get('administeredByUserId') || ''
 
@@ -27,9 +28,15 @@ function LogForm() {
     administeredAt: initialTime,
     scheduledAt: initialScheduledAt,
     scheduleId: initialScheduleId,
+    eventId: initialEventId,
     notes: initialNotes,
     administeredByUserId: initialUserId
   })
+
+  // Reset override if the user changes the medication or time
+  useEffect(() => {
+    setIsOverride(false)
+  }, [form.medicationId, form.administeredAt])
 
   useEffect(() => {
     fetch('/api/medications').then(res => res.json()).then(data => setMeds(data.medications || []))

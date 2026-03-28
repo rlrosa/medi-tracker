@@ -45,3 +45,18 @@ next-env.d.ts
 /dev.db-journal
 prisma/dev.db
 test-db.ts
+
+# User added database files and backups
+/prisma/prod_final.db
+/prisma/prod_migrated.db
+/prisma/prod_final.db-journal
+/src/lib/dev.db
+*.json
+*.sql
+*.cjs
+/scripts/dump-*.ts
+/scripts/migrate-*.ts
+/scripts/seed-local.ts
+/scripts/db-dump-node.ts
+/scripts/sync-migrated-events.ts
+/scripts/imaginaryUncacheableRequireResolveScript
