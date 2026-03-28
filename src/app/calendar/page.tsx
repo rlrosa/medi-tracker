@@ -43,6 +43,17 @@ export default function CalendarView() {
   const [deletingEvent, setDeletingEvent] = useState<any>(null)
   const [conflictData, setConflictData] = useState<any>(null)
   const [isOverride, setIsOverride] = useState(false)
+  const [violationDetail, setViolationDetail] = useState<{title: string, message: string} | null>(null)
+
+  const showViolationDetails = (med: any) => {
+    const type = med.warningType || med.log?.warningType || ((med.isOverride || med.log?.isOverride) ? 'OVERRIDE' : 'UNKNOWN');
+    let msg = "This schedule event deviated from typical parameters.";
+    if (type === 'INTERVAL') msg = "This dose violates the minimum required time interval between administrations.";
+    if (type === 'OFFSET_VIOLATION' || type === 'OVERRIDE') msg = "This dose was manually offset from its optimal schedule, deviating from the baseline rhythm.";
+    if (type === 'RELATIONSHIP') msg = "This dose conflicts with a defined medication relationship rule.";
+    
+    setViolationDetail({ title: "Schedule Violation", message: msg });
+  }
 
   // Reset override if the user changes the medication or time
   useEffect(() => {
@@ -845,11 +856,13 @@ export default function CalendarView() {
                                 {item.type === 'MISSED' && <span style={{ color: '#ef4444', marginLeft: '4px' }}>(Missed)</span>}
                                 {item.type === 'LOGGED' && item.log.status === 'SKIPPED' && <span style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>(Skipped)</span>}
                                 {(item.warningType || item.isOverride || item.log?.warningType || item.log?.isOverride) && (
-                                  <Icons.AlertTriangle 
-                                    size={12} 
-                                    style={{ color: '#f59e0b', marginLeft: '4px' }} 
-                                    className="warning-pulse"
-                                  />
+                                  <div onClick={(e) => { e.stopPropagation(); showViolationDetails(item); }} title="Click for violation details" style={{ display: 'inline-flex', cursor: 'pointer' }}>
+                                    <Icons.AlertTriangle 
+                                      size={12} 
+                                      style={{ color: '#f59e0b', marginLeft: '4px' }} 
+                                      className="warning-pulse"
+                                    />
+                                  </div>
                                 )}
                               </span>
                             </div>
@@ -1412,6 +1425,19 @@ export default function CalendarView() {
             }
           }}
         />
+      )}
+
+      {/* Violation Detail Modal */}
+      {violationDetail && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}>
+              <Icons.AlertTriangle size={24} /> {violationDetail.title}
+            </h3>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{violationDetail.message}</p>
+            <button className="btn" style={{ width: '100%', background: 'var(--bg-secondary)' }} onClick={() => setViolationDetail(null)}>Close</button>
+          </div>
+        </div>
       )}
     </main>
   )

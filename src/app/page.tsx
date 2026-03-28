@@ -38,6 +38,17 @@ export default function Dashboard() {
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
   const [ambiguityData, setAmbiguityData] = useState<AmbiguityData | null>(null)
   const [isOverride, setIsOverride] = useState(false)
+  const [violationDetail, setViolationDetail] = useState<{title: string, message: string} | null>(null)
+
+  const showViolationDetails = (med: any) => {
+    const type = med.warningType || (med.isOverride ? 'OVERRIDE' : 'UNKNOWN');
+    let msg = "This schedule event deviated from typical parameters.";
+    if (type === 'INTERVAL') msg = "This dose violates the minimum required time interval between administrations.";
+    if (type === 'OFFSET_VIOLATION' || type === 'OVERRIDE') msg = "This dose was manually offset from its optimal schedule, deviating from the baseline rhythm.";
+    if (type === 'RELATIONSHIP') msg = "This dose conflicts with a defined medication relationship rule.";
+    
+    setViolationDetail({ title: "Schedule Violation", message: msg });
+  }
 
   // Reset override if the user changes the medication or time
   useEffect(() => {
@@ -276,8 +287,8 @@ export default function Dashboard() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <h3 style={{ fontSize: '1.25rem' }}>{med.name}</h3>
                         {med.warningType && (
-                           <div style={{ display: 'flex', alignItems: 'center' }} title={`Predicted Violation: ${med.warningType}`}>
-                             <Icons.AlertTriangle size={18} color="var(--danger)" />
+                           <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); showViolationDetails(med); }} title="Click for violation details">
+                             <Icons.AlertTriangle size={18} color="#f59e0b" className="warning-pulse" />
                            </div>
                         )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
@@ -663,6 +674,19 @@ export default function Dashboard() {
             }, 100);
           }}
         />
+      )}
+
+      {/* Violation Detail Modal */}
+      {violationDetail && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}>
+              <Icons.AlertTriangle size={24} /> {violationDetail.title}
+            </h3>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{violationDetail.message}</p>
+            <button className="btn" style={{ width: '100%', background: 'var(--bg-secondary)' }} onClick={() => setViolationDetail(null)}>Close</button>
+          </div>
+        </div>
       )}
 
     </main>
