@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const oldStartDate = schedule?.startDate?.toISOString()
     const newStartDate = schedule?.startDate ? new Date(schedule.startDate.getTime() + deltaMs).toISOString() : undefined
 
-    await recordHistory(session.userId, 'OFFSET', 
+    await recordHistory(session.userId as string, 'OFFSET', 
       {
         scheduleId,
         offsetMinutes: -deltaMinutes,

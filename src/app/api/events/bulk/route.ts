@@ -43,10 +43,21 @@ export async function DELETE(request: Request) {
       }
     })
 
-    await recordHistory(session.userId, 'BULK_DELETE', {
-      scheduleId,
-      events: eventsToDelete
-    }, `Bulk deleted future doses`)
+    await recordHistory(
+      session.userId as string, 
+      'BULK_DELETE', 
+      {
+        mode: 'RESTORE',
+        scheduleId,
+        events: eventsToDelete
+      },
+      {
+        mode: 'DELETE',
+        scheduleId,
+        afterTime: deleteFrom.toISOString()
+      },
+      `Bulk deleted future doses`
+    )
 
     // 1. Delete all future PENDING events
     await prisma.medicationEvent.deleteMany({

@@ -46,7 +46,7 @@ export async function PATCH(
         }
       })
 
-      await recordHistory(session.userId, 'BULK_DELETE', 
+      await recordHistory(session.userId as string, 'BULK_DELETE', 
         { 
           mode: 'RESTORE',
           scheduleId: event.scheduleId, 
@@ -102,7 +102,7 @@ export async function PATCH(
 
     // Record HISTORY for MOVE
     if (time) {
-      await recordHistory(session.userId, 'MOVE', 
+      await recordHistory(session.userId as string, 'MOVE', 
         { eventId, time: event.time.toISOString() }, // Undo: back to old time
         { eventId, time: time },                      // Redo: to new time
         `Moved ${event.schedule.name || 'dose'}`
@@ -156,7 +156,7 @@ export async function DELETE(
     }
 
     // Record History for Undo
-    await recordHistory(session.userId, 'DELETE', 
+    await recordHistory(session.userId as string, 'DELETE', 
       {
         mode: 'RESTORE',
         id: event.id,
