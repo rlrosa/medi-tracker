@@ -2,6 +2,45 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const session = await getSession()
+  if (!session || !session.accountId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const patient = await prisma.patient.findFirst({
+      where: {
+        id,
+        accountId: session.accountId as string
+      },
+      include: {
+        medications: true
+      }
+    })
+
+    if (!patient) {
+      return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
+    }
+
+    const relationships = await prisma.medicationRelationship.findMany({
+      where: {
+        medicationA: { patientId: id }
+      },
+      include: {
+        medicationA: true,
+        medicationB: true
+      }
+    })
+
+    return NextResponse.json({ patient, relationships })
+  } catch (error) {
+    console.error('Error fetching patient', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const session = await getSession()

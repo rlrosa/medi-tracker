@@ -92,10 +92,11 @@ export default function PatientsPage() {
         ) : (
           <div className="grid">
             {patients.map(p => (
-              <div key={p.id} className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)' }}>
-                <div>
+              <div key={p.id} className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', position: 'relative' }}>
+                <Link href={`/patients/${p.id}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}></Link>
+                <div style={{ position: 'relative', zIndex: 2, pointerEvents: 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h3 style={{ margin: 0 }}>{p.name}</h3>
+                    <h3 style={{ margin: 0, textDecoration: 'underline' }}>{p.name}</h3>
                     {p.user?.role === 'ADMIN' && (
                       <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--accent-primary)', color: 'white', padding: '0.15rem 0.3rem', borderRadius: '4px', fontWeight: 'bold' }}>ADMIN</span>
                     )}
@@ -107,7 +108,7 @@ export default function PatientsPage() {
                     {p.selfMedication ? '✅ Self-Medication Enabled' : '👤 Caregiver Managed'}
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', position: 'relative', zIndex: 3 }}>
                   <button onClick={() => handleDelete(p.id, p.name)} className="btn" style={{ color: 'var(--danger)', background: 'transparent' }}>Delete</button>
                 </div>
               </div>

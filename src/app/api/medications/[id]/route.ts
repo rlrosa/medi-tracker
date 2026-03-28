@@ -68,6 +68,8 @@ export async function PUT(
         name: data.name,
         alias: data.alias || null,
         imageUrl: data.imageUrl || null,
+        minIntervalMinutes: data.minIntervalMinutes !== undefined ? data.minIntervalMinutes : null,
+        maxIntervalMinutes: data.maxIntervalMinutes !== undefined ? data.maxIntervalMinutes : null,
       }
     })
 

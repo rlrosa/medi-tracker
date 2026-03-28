@@ -114,7 +114,6 @@ export async function checkViolations(
     
     if (rel.type === 'FAR_FROM') {
       const minVal = rel.valueMinutes || effectiveMinInterval
-      // Check if any instance of Med B is within minVal of our target event
       for (const other of otherMedInstances) {
         const diff = Math.abs(targetEvent.time.getTime() - other.time.getTime()) / (1000 * 60)
         if (diff < minVal) {
@@ -134,7 +133,6 @@ export async function checkViolations(
     if (rel.type === 'NEAR_TO') {
       const maxVal = rel.valueMinutes || effectiveMaxInterval
       if (maxVal) {
-        // Find closest instance of Med B before or after
         const closest = otherMedInstances.reduce((prevVal: any, curr) => {
           const currDiff = Math.abs(targetEvent.time.getTime() - curr.time.getTime())
           const prevDiff = prevVal ? Math.abs(targetEvent.time.getTime() - prevVal.time.getTime()) : Infinity
@@ -152,6 +150,55 @@ export async function checkViolations(
               severity: 'WARNING',
               interactingEventId: closest.id,
               eventB: { name: rel.medicationB.name || 'Other', time: closest.time }
+            })
+          }
+        }
+      }
+    }
+  }
+
+  // Medication B is "target", check if any Relationship exists where Medication A is constrained by US (Medication B)
+  for (const rel of medication.relationshipsAsB) {
+    const otherMedInstances = instances.filter(i => i.medicationId === rel.medicationAId)
+    
+    if (rel.type === 'FAR_FROM') {
+      const minVal = rel.valueMinutes || effectiveMinInterval
+      for (const other of otherMedInstances) {
+        const diff = Math.abs(targetEvent.time.getTime() - other.time.getTime()) / (1000 * 60)
+        if (diff < minVal) {
+          violations.push({
+            type: 'FAR_FROM',
+            medicationAId: rel.medicationAId,
+            medicationBId: medication.id,
+            message: `${rel.medicationA.name} must be at least ${minVal}m away from ${medication.name}. Current gap: ${Math.round(diff)}m.`,
+            severity: 'WARNING',
+            interactingEventId: other.id,
+            eventB: { name: rel.medicationA.name || 'Other', time: other.time }
+          })
+        }
+      }
+    }
+    
+    if (rel.type === 'NEAR_TO') {
+      const maxVal = rel.valueMinutes || effectiveMaxInterval
+      if (maxVal) {
+        const closest = otherMedInstances.reduce((prevVal: any, curr) => {
+          const currDiff = Math.abs(targetEvent.time.getTime() - curr.time.getTime())
+          const prevDiff = prevVal ? Math.abs(targetEvent.time.getTime() - prevVal.time.getTime()) : Infinity
+          return currDiff < prevDiff ? curr : prevVal
+        }, null)
+        
+        if (closest) {
+          const diff = Math.abs(targetEvent.time.getTime() - closest.time.getTime()) / (1000 * 60)
+          if (diff > maxVal) {
+            violations.push({
+              type: 'NEAR_TO',
+              medicationAId: rel.medicationAId,
+              medicationBId: medication.id,
+              message: `${rel.medicationA.name} must be within ${maxVal}m of ${medication.name}. Current gap: ${Math.round(diff)}m.`,
+              severity: 'WARNING',
+              interactingEventId: closest.id,
+              eventB: { name: rel.medicationA.name || 'Other', time: closest.time }
             })
           }
         }

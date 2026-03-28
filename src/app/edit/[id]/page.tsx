@@ -28,6 +28,10 @@ export default function EditMedication() {
     name: '',
     alias: '',
     imageUrl: '',
+    minIntervalHours: '',
+    minIntervalMinutes: '',
+    maxIntervalHours: '',
+    maxIntervalMinutes: '',
   })
 
   const [schedules, setSchedules] = useState<any[]>([{
@@ -70,6 +74,10 @@ export default function EditMedication() {
         name: med.name || '',
         alias: med.alias || '',
         imageUrl: med.imageUrl || '',
+        minIntervalHours: med.minIntervalMinutes ? Math.floor(med.minIntervalMinutes / 60).toString() : '',
+        minIntervalMinutes: med.minIntervalMinutes ? (med.minIntervalMinutes % 60).toString() : '',
+        maxIntervalHours: med.maxIntervalMinutes ? Math.floor(med.maxIntervalMinutes / 60).toString() : '',
+        maxIntervalMinutes: med.maxIntervalMinutes ? (med.maxIntervalMinutes % 60).toString() : '',
       })
       if (med.schedules && med.schedules.length > 0) {
         setSchedules(med.schedules.map((s: any) => ({
@@ -118,7 +126,13 @@ export default function EditMedication() {
         marginMinutes: s.marginMinutes ? parseInt(s.marginMinutes, 10) : 30,
         startDate: s.startDate ? new Date(s.startDate).toISOString() : null,
         endDate: s.endDate ? new Date(s.endDate).toISOString() : null,
-      }))
+      })),
+      minIntervalMinutes: (form.minIntervalHours || form.minIntervalMinutes) 
+        ? ((parseInt(form.minIntervalHours || '0', 10) * 60) + parseInt(form.minIntervalMinutes || '0', 10))
+        : null,
+      maxIntervalMinutes: (form.maxIntervalHours || form.maxIntervalMinutes) 
+        ? ((parseInt(form.maxIntervalHours || '0', 10) * 60) + parseInt(form.maxIntervalMinutes || '0', 10))
+        : null
     }
 
     const res = await fetch(`/api/medications/${medId}`, {
@@ -173,6 +187,23 @@ export default function EditMedication() {
           <div>
             <label style={{ display: 'block', marginBottom: '0.25rem' }}>Image URL (Optional)</label>
             <input type="url" className="input-field" placeholder="https://..." value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
+          </div>
+
+          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Min Interval</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="number" min="0" placeholder="Hrs" className="input-field" value={form.minIntervalHours} onChange={e => setForm({...form, minIntervalHours: e.target.value})} />
+                <input type="number" min="0" max="59" placeholder="Mins" className="input-field" value={form.minIntervalMinutes} onChange={e => setForm({...form, minIntervalMinutes: e.target.value})} />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Max Interval</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="number" min="0" placeholder="Hrs" className="input-field" value={form.maxIntervalHours} onChange={e => setForm({...form, maxIntervalHours: e.target.value})} />
+                <input type="number" min="0" max="59" placeholder="Mins" className="input-field" value={form.maxIntervalMinutes} onChange={e => setForm({...form, maxIntervalMinutes: e.target.value})} />
+              </div>
+            </div>
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '1rem 0' }} />

@@ -71,6 +71,8 @@ export async function POST(request: Request) {
         alias: data.alias || null,
         imageUrl: data.imageUrl || null,
         patientId: data.patientId,
+        minIntervalMinutes: data.minIntervalMinutes || null,
+        maxIntervalMinutes: data.maxIntervalMinutes || null,
         schedules: {
           create: schedules.map((s: any) => ({
             name: s.name || 'Schedule',
