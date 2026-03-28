@@ -348,7 +348,6 @@ export default function Dashboard() {
                           
                           <button
                             onClick={() => {
-                              if (!confirm(`Skip this dose of ${med.name}?`)) return;
                               setAdministeringMed({ ...med, status: 'SKIPPED' })
                               setAdministerNotes('Skipped dose')
                             }}

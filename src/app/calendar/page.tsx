@@ -867,7 +867,7 @@ export default function CalendarView() {
                                    <Icons.Check size={12} strokeWidth={3} />
                                  </button>
                                  <button 
-                                   onClick={() => { if(confirm(`Skip ${item.name}?`)) { setAdministeringMed({...item, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }} 
+                                   onClick={() => { setAdministeringMed({...item, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); }} 
                                    style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--accent-primary)', opacity: 0.8 }}
                                    title="Skip"
                                  >
@@ -1066,7 +1066,7 @@ export default function CalendarView() {
                   <button 
                     className="btn" 
                     style={{ height: '54px', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', width: '100%' }}
-                    onClick={() => { if(confirm(`Skip ${selectedEntry.name}?`)) { setAdministeringMed({...selectedEntry, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); } }}
+                    onClick={() => { setAdministeringMed({...selectedEntry, status: 'SKIPPED'}); setAdministerNotes('Skipped dose'); }}
                   >
                     ⏭️ Skip Dose
                   </button>
