@@ -120,8 +120,11 @@ export default function CalendarView() {
     if (administeringMed && !adminTimeStr) {
       const pad = (n: number) => n.toString().padStart(2, '0')
       let d = new Date()
-      if (administeringMed.status === 'SKIPPED' && administeringMed.time) {
-        d = new Date(administeringMed.originalTime || administeringMed.time)
+      if (administeringMed.status === 'SKIPPED') {
+        const scheduledTimeStr = administeringMed.originalTime || administeringMed.time || administeringMed.nextDue || administeringMed.displayTime
+        if (scheduledTimeStr) {
+          d = new Date(scheduledTimeStr)
+        }
       }
       setAdminTimeStr(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
     }
