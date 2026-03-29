@@ -61,3 +61,4 @@ test-db.ts
 /scripts/sync-migrated-events.ts
 /scripts/imaginaryUncacheableRequireResolveScript
 .tbd
+out/
