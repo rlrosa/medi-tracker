@@ -33,19 +33,39 @@ The application uses a secure JWT-based session system with encrypted cookies.
    npm install
    ```
 
-2. Configure Database:
-   Create a `.env` file at the root and provide your **Neon PostgreSQL** credentials.
+2. Configure Database & Environment Variables:
+   Create a `.env` file at the root and provide your **Neon PostgreSQL** credentials along with your email configuration and Turnstile keys.
    ```bash
    DATABASE_URL="postgresql://user:password@remote-neon-db.../neondb?sslmode=require"
+
+   # Cloudflare Turnstile for CAPTCHA
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY="your_site_key"
+   TURNSTILE_SECRET_KEY="your_secret_key"
+
+   # SMTP Configuration for Email Verification
+   SMTP_HOST="smtp.yourprovider.com"
+   SMTP_PORT="587"
+   SMTP_SECURE="false"
+   SMTP_USER="your_email@example.com"
+   SMTP_PASS="your_password"
+   SMTP_FROM="\"MediTracker\" <noreply@example.com>"
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"
    ```
 
-3. Initialize the database schema:
+3. Initialize the database schema and apply migrations:
    ```bash
    npx prisma db push
    npx prisma generate
    ```
+   *Note: If you are upgrading an existing database to the multi-tenant schema, run `npx ts-node scripts/migrate_to_multi_tenant.ts` to grant existing users access to their accounts.*
 
-4. Run the development server:
+4. Setup Superadmin (First time only):
+   After registering your first user, elevate them to Superadmin to be able to approve other users.
+   ```bash
+   npx ts-node scripts/make_superadmin.ts your_email@example.com
+   ```
+
+5. Run the development server:
    ```bash
    npm run dev
    ```

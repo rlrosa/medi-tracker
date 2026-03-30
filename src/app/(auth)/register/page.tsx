@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Turnstile from 'react-turnstile'
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -10,22 +12,29 @@ export default function RegisterPage() {
   const [accountName, setAccountName] = useState('')
   const [accountType, setAccountType] = useState('SOLO')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const router = useRouter()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!turnstileToken) {
+      setError('Please complete the captcha')
+      return
+    }
+
     setError('')
+    setSuccess('')
     setLoading(true)
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, accountName, accountType })
+      body: JSON.stringify({ email, password, name, accountName, accountType, turnstileToken })
     })
 
     if (res.ok) {
-      router.push('/')
-      router.refresh()
+      setSuccess('Registration successful! Please check your email for a verification link, or wait for admin approval.')
     } else {
       const data = await res.json()
       setError(data.error || 'Registration failed')
@@ -41,6 +50,7 @@ export default function RegisterPage() {
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Create your account</p>
         
         {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+        {success && <div style={{ color: 'var(--success)', marginBottom: '1rem', textAlign: 'center' }}>{success}</div>}
         
         <form onSubmit={handleRegister} className="flex-col" style={{ gap: '1rem', display: 'flex' }}>
           <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -102,7 +112,14 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={loading}>
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+            <Turnstile
+              sitekey={TURNSTILE_SITE_KEY}
+              onVerify={(token: string) => setTurnstileToken(token)}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={loading || !turnstileToken || !!success}>
             {loading ? 'Creating...' : 'Register'}
           </button>
         </form>

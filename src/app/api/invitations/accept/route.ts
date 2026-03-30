@@ -20,35 +20,72 @@ export async function POST(request: Request) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } })
+
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 })
+      // If user exists, they must authenticate with their proper password
+      const isMatch = await bcrypt.compare(password, existingUser.passwordHash)
+      if (!isMatch) {
+        return NextResponse.json({ error: 'User already exists. Incorrect password to link account.' }, { status: 401 })
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user and mark invitation as accepted in a transaction
-    const [user] = await prisma.$transaction([
-      prisma.user.create({
-        data: {
-          email: invitation.email,
-          passwordHash: hashedPassword,
-          name,
-          role: invitation.role,
-          accountId: invitation.accountId
-        }
-      }),
-      prisma.invitation.update({
+    let user = existingUser
+    let roleInAccount = invitation.role
+
+    await prisma.$transaction(async (tx) => {
+      if (!user) {
+        // Create user if they don't exist
+        user = await tx.user.create({
+          data: {
+            email: invitation.email,
+            passwordHash: hashedPassword,
+            name,
+            role: 'USER', // Global role
+            accountId: invitation.accountId, // legacy
+            isApproved: true, // Caregivers are implicitly approved by the admin inviting them
+            emailVerified: new Date(), // Implicitly verified since they received the email
+          }
+        })
+      }
+
+      // Add access to the account
+      if (invitation.accountId) {
+        const access = await tx.accountAccess.upsert({
+          where: {
+            userId_accountId: {
+              userId: user.id,
+              accountId: invitation.accountId
+            }
+          },
+          create: {
+            userId: user.id,
+            accountId: invitation.accountId,
+            role: invitation.role
+          },
+          update: {
+            role: invitation.role
+          }
+        })
+        roleInAccount = access.role
+      }
+
+      await tx.invitation.update({
         where: { id: invitation.id },
         data: { acceptedAt: new Date() }
       })
-    ])
+    })
 
-    if (!user.accountId) {
-      throw new Error('User created without an account link')
+    if (!user || !invitation.accountId) {
+      throw new Error('User creation failed or missing account link')
     }
 
-    // Log them in immediately
-    await createSession(user.id, user.accountId, user.role)
+    // Use global role if SUPERADMIN, else use the role within the account they are switching to
+    const sessionRole = user.role === 'SUPERADMIN' ? 'SUPERADMIN' : roleInAccount
+
+    // Log them in immediately to the workspace they were invited to
+    await createSession(user.id, invitation.accountId, sessionRole)
 
     return NextResponse.json({ success: true })
   } catch (error) {

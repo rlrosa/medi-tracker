@@ -1,14 +1,43 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { v4 as uuidv4 } from 'uuid'
 import { createSession } from '@/lib/session'
+import { verifyTurnstileToken } from '@/lib/turnstile'
+import { sendVerificationEmail } from '@/lib/email'
+
+// Basic rate limiting map (IP -> timestamp array)
+const rateLimitMap = new Map<string, number[]>()
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, accountName, accountType } = await request.json()
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const now = Date.now()
+
+    // Clean up old entries
+    const userTimestamps = rateLimitMap.get(ip) || []
+    const recentTimestamps = userTimestamps.filter(t => now - t < 60000) // 1 minute window
+
+    if (recentTimestamps.length >= 5) {
+      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
+    }
+
+    recentTimestamps.push(now)
+    rateLimitMap.set(ip, recentTimestamps)
+
+    const { email, password, name, accountName, accountType, turnstileToken } = await request.json()
 
     if (!email || !password || !accountName) {
       return NextResponse.json({ error: 'Email, password, and account name are required' }, { status: 400 })
+    }
+
+    if (!turnstileToken) {
+      return NextResponse.json({ error: 'Captcha validation required' }, { status: 400 })
+    }
+
+    const isValidToken = await verifyTurnstileToken(turnstileToken)
+    if (!isValidToken) {
+      return NextResponse.json({ error: 'Invalid captcha token' }, { status: 400 })
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -20,6 +49,7 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
+    const verificationToken = uuidv4()
 
     // Create Account and User in a transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -37,7 +67,18 @@ export async function POST(request: Request) {
           name: name || '',
           role: 'ADMIN',
           accountId: account.id,
+          verificationToken,
+          isApproved: false,
         },
+      })
+
+      // Link User to Account in multi-tenant setup
+      await tx.accountAccess.create({
+        data: {
+          userId: user.id,
+          accountId: account.id,
+          role: 'ADMIN',
+        }
       })
 
       // If Solo mode, create a "Self" patient
@@ -55,11 +96,12 @@ export async function POST(request: Request) {
       return { user, account }
     })
 
-    await createSession(result.user.id, result.account.id, result.user.role)
+    await sendVerificationEmail(email, verificationToken)
 
+    // We no longer log them in immediately, they must verify email or get approved.
     return NextResponse.json({
-      user: { id: result.user.id, email: result.user.email, name: result.user.name, role: result.user.role },
-      account: { id: result.account.id, name: result.account.name, type: result.account.type }
+      success: true,
+      message: 'Registration successful. Please check your email to verify your account or wait for superadmin approval.',
     })
   } catch (error) {
     console.error('Registration error', error)
