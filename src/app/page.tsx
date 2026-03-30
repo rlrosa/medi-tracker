@@ -95,11 +95,23 @@ export default function Dashboard() {
     fetchData()
     const interval = setInterval(fetchData, 60000)
     
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        setNeedsPermission(true)
+    import('@capacitor/core').then(({ Capacitor }) => {
+      if (Capacitor.isNativePlatform()) {
+        import('@capacitor/local-notifications').then(({ LocalNotifications }) => {
+          LocalNotifications.checkPermissions().then(res => {
+            if (res.display === 'prompt' || res.display === 'prompt-with-rationale') {
+              setNeedsPermission(true)
+            }
+          })
+        })
+      } else {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          if (Notification.permission === 'default') {
+            setNeedsPermission(true)
+          }
+        }
       }
-    }
+    })
     
     return () => clearInterval(interval)
   }, [])
@@ -119,9 +131,16 @@ export default function Dashboard() {
   }, [administeringMed])
 
   const requestPermissions = async () => {
-    if ('Notification' in window) {
-      const perm = await Notification.requestPermission()
-      setNeedsPermission(perm === 'default')
+    const { Capacitor } = await import('@capacitor/core')
+    if (Capacitor.isNativePlatform()) {
+      const { LocalNotifications } = await import('@capacitor/local-notifications')
+      const res = await LocalNotifications.requestPermissions()
+      setNeedsPermission(res.display === 'prompt')
+    } else {
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission()
+        setNeedsPermission(perm === 'default')
+      }
     }
     // Unlock Audio Context silently
     try {

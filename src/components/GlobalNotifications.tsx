@@ -55,7 +55,7 @@ export function GlobalNotifications() {
     }
   }
 
-  const triggerNotification = (med: any) => {
+  const triggerNotification = async (med: any) => {
     setActiveToast(`It is time to take ${med.name}!`)
     setTimeout(() => setActiveToast(null), 8000)
 
@@ -79,11 +79,30 @@ export function GlobalNotifications() {
       } catch(e) {}
     }
 
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(`Medication Reminder: ${med.name}`, {
-        body: `It's time for your scheduled dose.`,
-        icon: '/logo.png'
-      })
+    const { Capacitor } = await import('@capacitor/core')
+    if (Capacitor.isNativePlatform()) {
+      const { LocalNotifications } = await import('@capacitor/local-notifications')
+      const perm = await LocalNotifications.checkPermissions()
+      if (perm.display === 'granted') {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: `Medication Reminder: ${med.name}`,
+              body: `It's time for your scheduled dose.`,
+              id: Date.now() % 2147483647,
+              schedule: { at: new Date(Date.now() + 1000) },
+              smallIcon: 'ic_launcher_round'
+            }
+          ]
+        })
+      }
+    } else {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(`Medication Reminder: ${med.name}`, {
+          body: `It's time for your scheduled dose.`,
+          icon: '/logo.png'
+        })
+      }
     }
   }
 
