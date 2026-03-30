@@ -55,12 +55,20 @@ Here is a guide on how to work with the Android project and how to get it onto t
    - **Important**: If you change the `appId`, you may need to refactor the Android package names in Android Studio (`MainActivity.java` and `build.gradle`).
 
 2. **Update App Icons and Splash Screens**
-   Use `cordova-res` or `@capacitor/assets` to automatically generate icons and splash screens.
+   Use `@capacitor/assets` to automatically generate icons and splash screens.
+   First, you must create a `resources/` directory in the root of your project and place your source icon and splash screen images inside it.
+   ```bash
+   mkdir resources
+   ```
+   Ensure you place:
+   - `resources/icon.png` (Recommended: 1024x1024px)
+   - `resources/splash.png` (Recommended: 2732x2732px)
+
+   Then, run the asset generator:
    ```bash
    npm install -g @capacitor/assets
    npx capacitor-assets generate --android
    ```
-   You'll need to provide an icon (`resources/icon.png`) and splash screen (`resources/splash.png`).
 
 3. **Configure Permissions**
    If you need specific native permissions (like camera, push notifications, etc.), you'll need to add them to `android/app/src/main/AndroidManifest.xml` and potentially install specific Capacitor plugins (e.g., `@capacitor/push-notifications`).
