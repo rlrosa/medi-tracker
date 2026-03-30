@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "android:deploy": "./deploy-android.sh"
   },
   "dependencies": {
     "@capacitor/core": "^8.3.0",

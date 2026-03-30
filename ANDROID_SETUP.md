@@ -39,6 +39,12 @@ Here is a guide on how to work with the Android project and how to get it onto t
    ```
    Alternatively, open Android Studio and choose "Open an existing project" and select the `android` folder in the root of this repository.
 
+7. **Deploying to a Connected Device**
+   If you have an Android device connected via USB (with Developer Options & USB Debugging enabled), you can easily build and deploy the application to your device by running:
+   ```bash
+   npm run android:deploy
+   ```
+
 ## Preparing for the Google Play Store
 
 1. **Update App Credentials**
