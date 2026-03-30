@@ -8,13 +8,27 @@ datasource db {
 }
 
 model Account {
-  id          String       @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
-  type        String       @default("SOLO")
-  createdAt   DateTime     @default(now())
+  type        String          @default("SOLO")
+  createdAt   DateTime        @default(now())
   invitations Invitation[]
   patients    Patient[]
-  users       User[]
+  users       User[]          @relation("PrimaryAccount") // Legacy/Primary account
+  accesses    AccountAccess[]
+}
+
+model AccountAccess {
+  id        String   @id @default(cuid())
+  userId    String
+  accountId String
+  role      String   @default("CAREGIVER") // Role in this specific account (e.g. ADMIN, CAREGIVER)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accountId])
 }
 
 model User {
@@ -22,14 +36,21 @@ model User {
   name                  String?
   username              String?             @unique
   passwordHash          String
-  role                  String              @default("USER")
+  role                  String              @default("USER") // Global role (USER, SUPERADMIN)
   createdAt             DateTime            @default(now())
+
+  // Auth/Approval fields
+  isApproved            Boolean             @default(false)
+  emailVerified         DateTime?
+  verificationToken     String?             @unique
+
   accountId             String?
   email                 String?             @unique
   defaultMovePreference String              @default("ASK")
   logs                  AdministrationLog[]
   patients              Patient[]
-  account               Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account               Account?            @relation("PrimaryAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  accountAccesses       AccountAccess[]
 }
 
 model MedicationEventHistory {

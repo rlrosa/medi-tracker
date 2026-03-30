@@ -1,19 +1,27 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     setIsMounted(true)
-  }, [])
+    const verified = searchParams.get('verified')
+    if (verified === 'true') {
+      setSuccess('Email successfully verified! You can now log in.')
+    } else if (verified === 'already') {
+      setSuccess('Email was already verified. You can log in.')
+    }
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,6 +75,23 @@ export default function LoginPage() {
             <span>⚠️</span> {error}
           </div>
         )}
+        {success && (
+          <div style={{
+            background: 'var(--success-glow)',
+            border: '1px solid var(--success)',
+            color: 'var(--success)',
+            padding: '1rem',
+            borderRadius: '12px',
+            marginBottom: '1.5rem',
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>✅</span> {success}
+          </div>
+        )}
         
         <form onSubmit={handleLogin} className="flex-col" style={{ gap: '1.5rem' }}>
           <div className="flex-col" style={{ gap: '0.5rem', textAlign: 'left' }}>
@@ -116,5 +141,13 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   )
 }

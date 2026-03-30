@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSettings } from './ThemeProvider'
 import { useEffect, useState } from 'react'
+import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
 export function Navigation() {
   const router = useRouter()
@@ -93,7 +94,7 @@ export function Navigation() {
       </div>
       
       <div className="nav-menu-container" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        
+        {user && <WorkspaceSwitcher />}
         <button 
           onClick={() => setMenuOpen(!menuOpen)} 
           className="btn" 
@@ -122,6 +123,13 @@ export function Navigation() {
                   </div>
                 ) : 'Guest (Read-Only)'}
              </div>
+
+            {user?.role === 'SUPERADMIN' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🛡️ Platform Admin</span>
+                <Link href="/superadmin" onClick={() => setMenuOpen(false)} style={{ color: 'var(--danger)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>Superadmin Dashboard</Link>
+              </div>
+            )}
 
             {user?.role === 'ADMIN' && (
               <>

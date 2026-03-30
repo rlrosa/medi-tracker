@@ -23,11 +23,16 @@ export async function POST(request: Request) {
           { username: identifier }
         ]
       },
-      include: { account: true }
+      include: {
+        account: true,
+        accountAccesses: {
+          include: { account: true }
+        }
+      }
     })
 
-    if (!user || !user.account) {
-      return NextResponse.json({ error: 'Invalid credentials or account missing' }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash)
@@ -35,17 +40,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    // Ensure accountId is present before creating session
-    if (!user.accountId) {
-      throw new Error('User created without an account link')
+    // Check approval and email verification
+    if (!user.isApproved && !user.emailVerified) {
+      return NextResponse.json({ error: 'Account pending. Please verify your email or wait for superadmin approval.' }, { status: 403 })
     }
 
+    // Determine primary account (default to their legacy accountId or the first one they have access to)
+    let primaryAccountId = user.accountId
+    let primaryAccount = user.account
+    let roleInAccount = 'USER'
+
+    if (user.accountAccesses.length > 0) {
+      // If the user's legacy account is in their accesses, use that, else use the first one
+      const access = user.accountAccesses.find(a => a.accountId === user.accountId) || user.accountAccesses[0]
+      primaryAccountId = access.accountId
+      primaryAccount = access.account
+      roleInAccount = access.role
+    }
+
+    if (!primaryAccountId || !primaryAccount) {
+      return NextResponse.json({ error: 'No account access found for user' }, { status: 401 })
+    }
+
+    // Use global role if SUPERADMIN, else use their role in the active account
+    const sessionRole = user.role === 'SUPERADMIN' ? 'SUPERADMIN' : roleInAccount
+
     // Log them in immediately
-    await createSession(user.id, user.accountId, user.role)
+    await createSession(user.id, primaryAccountId, sessionRole)
 
     return NextResponse.json({
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      account: { id: user.account.id, name: user.account.name, type: user.account.type }
+      user: { id: user.id, email: user.email, name: user.name, role: sessionRole, roleInAccount },
+      account: { id: primaryAccount.id, name: primaryAccount.name, type: primaryAccount.type }
     })
   } catch (error: any) {
     console.error('Login error for identifier:', identifier)
