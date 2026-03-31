@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { syncScheduleEvents } from '@/lib/events-manager'
 
 // List all medications for the account
 export async function GET() {
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
       },
       include: { schedules: true }
     })
+
+    for (const schedule of medication.schedules) {
+      await syncScheduleEvents(schedule.id, { forceRegenerate: true })
+    }
 
     return NextResponse.json({ medication })
   } catch (error) {

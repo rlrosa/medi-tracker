@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { syncScheduleEvents } from '@/lib/events-manager'
 
 export async function POST(
   request: Request,
@@ -36,6 +37,8 @@ export async function POST(
       where: { id },
       data: { endDate: now }
     })
+
+    await syncScheduleEvents(id, { forceRegenerate: true })
 
     return NextResponse.json({ success: true, endDate: now.toISOString() })
   } catch (error) {

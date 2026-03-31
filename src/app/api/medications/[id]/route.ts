@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { syncScheduleEvents } from '@/lib/events-manager'
 
 // Delete a medication
 export async function DELETE(
@@ -97,19 +98,21 @@ export async function PUT(
           icon: s.icon || null,
         }
 
+        let updatedSchedule;
         if (s.id) {
-          await prisma.medicationSchedule.update({
+          updatedSchedule = await prisma.medicationSchedule.update({
             where: { id: s.id },
             data: scheduleData
           })
         } else {
-          await prisma.medicationSchedule.create({
+          updatedSchedule = await prisma.medicationSchedule.create({
             data: {
               ...scheduleData,
               medicationId: id
             }
           })
         }
+        await syncScheduleEvents(updatedSchedule.id, { forceRegenerate: true })
       }
     } else {
       // Fallback: update primary schedule like before
@@ -128,13 +131,14 @@ export async function PUT(
         icon: data.icon || null,
       }
 
+      let updatedSchedule;
       if (primarySchedule) {
-        await prisma.medicationSchedule.update({
+        updatedSchedule = await prisma.medicationSchedule.update({
           where: { id: primarySchedule.id },
           data: scheduleData
         })
       } else {
-        await prisma.medicationSchedule.create({
+        updatedSchedule = await prisma.medicationSchedule.create({
           data: {
             ...scheduleData,
             medicationId: id,
@@ -142,6 +146,7 @@ export async function PUT(
           }
         })
       }
+      await syncScheduleEvents(updatedSchedule.id, { forceRegenerate: true })
     }
 
     return NextResponse.json({ medication })
