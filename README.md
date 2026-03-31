@@ -33,10 +33,16 @@ The application uses a secure JWT-based session system with encrypted cookies.
    npm install
    ```
 
-2. Configure Database:
+2. Configure Environment Variables:
    Create a `.env` file at the root and provide your **Neon PostgreSQL** credentials.
    ```bash
    DATABASE_URL="postgresql://user:password@remote-neon-db.../neondb?sslmode=require"
+   ```
+
+   **Optional Configuration:**
+   If you want to display a "Buy Me A Coffee" button in the app's navigation menu, you can add your URL to the `.env` file:
+   ```bash
+   NEXT_PUBLIC_BMC_URL="https://buymeacoffee.com/yourusername"
    ```
 
 3. Initialize the database schema:

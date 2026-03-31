@@ -12,6 +12,7 @@ export function Navigation() {
   const [use24h, setUse24h] = useState(false)
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
+  const bmcUrl = process.env.NEXT_PUBLIC_BMC_URL
 
   useEffect(() => {
     setHasMounted(true)
@@ -198,6 +199,12 @@ export function Navigation() {
             <button onClick={() => setMuteAudio(!muteAudio)} className="btn" style={{ padding: '0.5rem', background: 'var(--bg-secondary)', color: 'inherit', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {muteAudio ? '🔇 Sounds Muted' : '🔊 Sounds Active'}
             </button>
+
+            {bmcUrl && (
+              <a href={bmcUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ padding: '0.5rem', background: '#FFDD00', color: '#000000', textAlign: 'center', display: 'block', fontWeight: 'bold', textDecoration: 'none', borderRadius: '8px' }}>
+                ☕ Buy Me a Coffee
+              </a>
+            )}
 
             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
               {user ? (
