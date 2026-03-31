@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { GlobalNotifications } from '@/components/GlobalNotifications'
+import { CapacitorInitializer } from '@/components/CapacitorInitializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -80,6 +81,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
+          <CapacitorInitializer />
           <GlobalNotifications />
           {children}
         </ThemeProvider>
