@@ -48,6 +48,12 @@ export function BmcPrompt() {
     setShowPrompt(false)
   }
 
+  const handleRemindLater = () => {
+    // Reset their first use time to now, effectively postponing for 2 days
+    localStorage.setItem('appFirstUsed', Date.now().toString())
+    setShowPrompt(false)
+  }
+
   const handleSupportClick = () => {
     // Also dismiss the prompt if they actually clicked the support link
     handleDismiss()
@@ -122,6 +128,35 @@ export function BmcPrompt() {
         >
           ☕ Buy Me a Coffee
         </a>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+          <button
+            onClick={handleRemindLater}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Remind me in 2 days
+          </button>
+          <button
+            onClick={handleDismiss}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
       </div>
     </div>
   )
