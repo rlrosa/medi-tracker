@@ -77,6 +77,18 @@ export async function PUT(
     if (data.schedules && Array.isArray(data.schedules)) {
       const scheduleIdsToKeep = data.schedules.filter((s: any) => s.id).map((s: any) => s.id)
       
+      // Prevent logs from being deleted or causing foreign key constraint errors
+      await prisma.administrationLog.updateMany({
+        where: {
+          medicationId: id,
+          scheduleId: { notIn: scheduleIdsToKeep }
+        },
+        data: {
+          scheduleId: null,
+          eventId: null
+        }
+      })
+
       // Delete removed schedules
       await prisma.medicationSchedule.deleteMany({
         where: {
