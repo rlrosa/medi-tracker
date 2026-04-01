@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { GlobalNotifications } from '@/components/GlobalNotifications'
 import { CapacitorInitializer } from '@/components/CapacitorInitializer'
+import { BmcPrompt } from '@/components/BmcPrompt'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -83,6 +84,7 @@ export default function RootLayout({
         <ThemeProvider>
           <CapacitorInitializer />
           <GlobalNotifications />
+          <BmcPrompt />
           {children}
         </ThemeProvider>
       </body>
