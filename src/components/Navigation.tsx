@@ -13,6 +13,12 @@ export function Navigation() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
 
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [peopleOpen, setPeopleOpen] = useState(false)
+  const [inventoryOpen, setInventoryOpen] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
+  const bmcUrl = process.env.NEXT_PUBLIC_BMC_URL
+
   useEffect(() => {
     setHasMounted(true)
     setCurrentTime(new Date())
@@ -126,7 +132,8 @@ export function Navigation() {
             {user?.role === 'ADMIN' && (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📅 Schedule</span>
+                  <div onClick={() => setScheduleOpen(!scheduleOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📅 Schedule</span><span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{scheduleOpen ? '▲' : '▼'}</span></div>
+                  {scheduleOpen && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
                   <Link href="/calendar" onClick={() => setMenuOpen(false)} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}>Medication Timeline</Link>
                   <div 
                     onClick={() => {
@@ -145,7 +152,6 @@ export function Navigation() {
                     }}
                     title="Re-open undo notification"
                   >
-                    <span style={{ fontSize: '1.1rem' }}>↩️</span>
                     <span>Undo Menu</span>
                   </div>
                   <Link href="/logs" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Administration Logs</Link>
@@ -159,45 +165,58 @@ export function Navigation() {
                         onClick={() => setMenuOpen(false)}
                         style={{ color: 'var(--success)', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0', fontWeight: 600 }}
                       >
-                        ➕ Log Past Medication
+                        Log Past Medication
                       </Link>
                     )
                   })()}
+                  </div>}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👥 People</span>
+                  <div onClick={() => setPeopleOpen(!peopleOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👥 People</span><span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{peopleOpen ? '▲' : '▼'}</span></div>
+                  {peopleOpen && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
                   <Link href="/patients" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Patients</Link>
                   <Link href="/invitations" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Caregivers</Link>
+                  </div>}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💊 Medication Inventory</span>
+                  <div onClick={() => setInventoryOpen(!inventoryOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💊 Medication Inventory</span><span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{inventoryOpen ? '▲' : '▼'}</span></div>
+                  {inventoryOpen && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
                   <Link href="/medications" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Medications</Link>
-                  <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>+ Add New Med</Link>
+                  <Link href="/add" onClick={() => setMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none', fontSize: '0.95rem', padding: '0.25rem 0' }}>Add New Med</Link>
+                  </div>}
                 </div>
               </>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚙️ Configuration</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Theme</label>
-                <select 
-                  className="input-field" 
-                  style={{ padding: '0.4rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }} 
-                  value={theme} 
-                  onChange={(e) => setTheme(e.target.value)}
-                >
-                  <option value="dark" style={{ background: '#1a1a1a', color: '#ffffff' }}>Dark Theme</option>
-                  <option value="light" style={{ background: '#ffffff', color: '#1a1a1a' }}>Light Theme</option>
-                </select>
-              </div>
+              <div onClick={() => setConfigOpen(!configOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem' }}><span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚙️ Configuration</span><span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{configOpen ? '▲' : '▼'}</span></div>
+              {configOpen && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Theme</label>
+                  <select
+                    className="input-field"
+                    style={{ padding: '0.4rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                  >
+                    <option value="dark" style={{ background: '#1a1a1a', color: '#ffffff' }}>Dark Theme</option>
+                    <option value="light" style={{ background: '#ffffff', color: '#1a1a1a' }}>Light Theme</option>
+                  </select>
+                </div>
+
+              <button onClick={() => setMuteAudio(!muteAudio)} className="btn" style={{ padding: '0.5rem', background: 'var(--bg-secondary)', color: 'inherit', textAlign: 'center', display: 'block', width: '100%', border: '1px solid var(--glass-border)' }}>
+                {muteAudio ? 'Sounds Muted' : 'Sounds Active'}
+              </button>
+
+              {bmcUrl && (
+                <a href={bmcUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ padding: '0.6rem', background: 'var(--accent-primary)', color: '#ffffff', textAlign: 'center', display: 'block', fontWeight: '600', textDecoration: 'none', borderRadius: '8px', fontSize: '0.9rem', transition: 'opacity 0.2s' }} onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'} onMouseOut={(e) => e.currentTarget.style.opacity = '1'}>
+                  ☕ Buy Me a Coffee
+                </a>
+              )}
+              </div>}
             </div>
-            
-            <button onClick={() => setMuteAudio(!muteAudio)} className="btn" style={{ padding: '0.5rem', background: 'var(--bg-secondary)', color: 'inherit', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {muteAudio ? '🔇 Sounds Muted' : '🔊 Sounds Active'}
-            </button>
 
             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
               {user ? (
