@@ -10,6 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **New Logic**: Always unit test new logic and anything relevant to its interactions with existing systems.
 - **Verification**: You should verify functionality through the browser subagent, unit tests, or both before committing.
 - **Commits**: Group logic changes into a single, cohesive commit. NEVER commit unverified code.
+- **Pre-Push Validation**: Before pushing branches or PRs to the remote repository, you MUST always verify that a full "from scratch" build completes successfully locally (e.g., `rm -rf node_modules .next package-lock.json && npm install && npm run build`). This emulates Vercel's build environment and catches hidden compilation/typing errors. *Note: We enforce this as a rule for agents rather than a Git `pre-push` hook, because a full clean build takes several minutes, which would be too expensive and frustrating for human developers to endure on every push.*
 
 # Push Notifications (Capacitor/Android)
 
