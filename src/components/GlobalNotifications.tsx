@@ -3,12 +3,24 @@ import { useEffect, useState, useRef } from 'react'
 import { useSettings } from './ThemeProvider'
 import * as Icons from 'lucide-react'
 
+// Helper to generate a consistent 32-bit positive integer ID for Capacitor notifications
+function generateNotificationId(medId: string, nextDue: string): number {
+  let hash = 0
+  const str = medId + nextDue
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
 export function GlobalNotifications() {
   const { muteAudio } = useSettings()
   const [activeToast, setActiveToast] = useState<string | null>(null)
   const lastNotifiedAt = useRef<Record<string, number>>({})
   const snoozedUntil = useRef<Record<string, number>>({})
   const [user, setUser] = useState<any>(null)
+  const lastScheduleHash = useRef<string | null>(null)
 
   useEffect(() => {
     // Initial user check
@@ -20,18 +32,39 @@ export function GlobalNotifications() {
   useEffect(() => {
     if (!user) return
 
+    const initNotifications = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          let perm = await LocalNotifications.checkPermissions()
+          if (perm.display !== 'granted') {
+            perm = await LocalNotifications.requestPermissions()
+          }
+        } else if ('Notification' in window) {
+          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            await Notification.requestPermission()
+          }
+        }
+      } catch (e) {
+        console.error('Failed to request notification permissions', e)
+      }
+      
+      checkMeds() // Initial check when user is available
+    }
+
+    initNotifications()
+
     const interval = setInterval(() => {
       checkMeds()
     }, 60000) // Every minute
-
-    checkMeds() // Initial check when user is available
 
     return () => clearInterval(interval)
   }, [user])
 
   const checkMeds = async () => {
     try {
-      const res = await fetch('/api/medications/upcoming?hours=24')
+      const res = await fetch('/api/medications/upcoming?hours=48')
       if (!res.ok) return
       const data = await res.json()
       const meds = data.upcoming || []
@@ -50,6 +83,47 @@ export function GlobalNotifications() {
           }
         }
       })
+
+      // Sync background notifications for native platforms
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const scheduleHash = JSON.stringify(meds.map((m: any) => m.id + m.nextDue))
+        if (scheduleHash !== lastScheduleHash.current) {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          const perm = await LocalNotifications.checkPermissions()
+          if (perm.display === 'granted') {
+            // Cancel all pending
+            const pending = await LocalNotifications.getPending()
+            if (pending.notifications.length > 0) {
+              await LocalNotifications.cancel({ notifications: pending.notifications })
+            }
+
+            const toSchedule = meds
+              .filter((med: any) => {
+                // Schedule for 10 minutes before due, matching the foreground trigger
+                const targetTime = new Date(med.nextDue).getTime() - 10 * 60 * 1000;
+                return targetTime > now && !med.isOverdue
+              })
+              .map((med: any) => {
+                const id = generateNotificationId(med.id, med.nextDue)
+
+                return {
+                  title: `Medication Reminder: ${med.name}`,
+                  body: `It's time for your scheduled dose.`,
+                  id: id,
+                  schedule: { at: new Date(new Date(med.nextDue).getTime() - 10 * 60 * 1000) },
+                  smallIcon: 'ic_launcher_round'
+                }
+              })
+
+            if (toSchedule.length > 0) {
+              await LocalNotifications.schedule({ notifications: toSchedule })
+            }
+            lastScheduleHash.current = scheduleHash
+          }
+        }
+      }
+
     } catch (e) {
       console.error('Failed to fetch meds for notifications', e)
     }
@@ -81,6 +155,9 @@ export function GlobalNotifications() {
 
     const { Capacitor } = await import('@capacitor/core')
     if (Capacitor.isNativePlatform()) {
+      // Background scheduled notifications handle system-level alerts now.
+      // We still schedule an immediate fallback if it was missed, but with a slight delay
+      // to avoid conflicting with the exact moment the background one fires if the app is open.
       const { LocalNotifications } = await import('@capacitor/local-notifications')
       const perm = await LocalNotifications.checkPermissions()
       if (perm.display === 'granted') {
@@ -89,7 +166,7 @@ export function GlobalNotifications() {
             {
               title: `Medication Reminder: ${med.name}`,
               body: `It's time for your scheduled dose.`,
-              id: Date.now() % 2147483647,
+              id: generateNotificationId(med.id, med.nextDue),
               schedule: { at: new Date(Date.now() + 1000) },
               smallIcon: 'ic_launcher_round'
             }
