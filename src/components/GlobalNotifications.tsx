@@ -3,6 +3,17 @@ import { useEffect, useState, useRef } from 'react'
 import { useSettings } from './ThemeProvider'
 import * as Icons from 'lucide-react'
 
+// Helper to generate a consistent 32-bit positive integer ID for Capacitor notifications
+function generateNotificationId(medId: string, nextDue: string): number {
+  let hash = 0
+  const str = medId + nextDue
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
 export function GlobalNotifications() {
   const { muteAudio } = useSettings()
   const [activeToast, setActiveToast] = useState<string | null>(null)
@@ -73,13 +84,7 @@ export function GlobalNotifications() {
                 return targetTime > now && !med.isOverdue
               })
               .map((med: any) => {
-                let hash = 0
-                const str = med.id + med.nextDue
-                for (let i = 0; i < str.length; i++) {
-                  hash = ((hash << 5) - hash) + str.charCodeAt(i)
-                  hash |= 0
-                }
-                const id = Math.abs(hash)
+                const id = generateNotificationId(med.id, med.nextDue)
 
                 return {
                   title: `Medication Reminder: ${med.name}`,
@@ -140,7 +145,7 @@ export function GlobalNotifications() {
             {
               title: `Medication Reminder: ${med.name}`,
               body: `It's time for your scheduled dose.`,
-              id: Date.now() % 2147483647,
+              id: generateNotificationId(med.id, med.nextDue),
               schedule: { at: new Date(Date.now() + 1000) },
               smallIcon: 'ic_launcher_round'
             }
