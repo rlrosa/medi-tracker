@@ -32,11 +32,32 @@ export function GlobalNotifications() {
   useEffect(() => {
     if (!user) return
 
+    const initNotifications = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          let perm = await LocalNotifications.checkPermissions()
+          if (perm.display !== 'granted') {
+            perm = await LocalNotifications.requestPermissions()
+          }
+        } else if ('Notification' in window) {
+          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            await Notification.requestPermission()
+          }
+        }
+      } catch (e) {
+        console.error('Failed to request notification permissions', e)
+      }
+      
+      checkMeds() // Initial check when user is available
+    }
+
+    initNotifications()
+
     const interval = setInterval(() => {
       checkMeds()
     }, 60000) // Every minute
-
-    checkMeds() // Initial check when user is available
 
     return () => clearInterval(interval)
   }, [user])
