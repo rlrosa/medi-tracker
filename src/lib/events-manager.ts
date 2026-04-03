@@ -230,15 +230,13 @@ async function applyAction(actionType: string, data: any) {
 
     case 'BULK_DELETE':
       if (data.mode === 'RESTORE') {
-         for (const eventData of data.events) {
-          await prisma.medicationEvent.create({
-            data: {
-              ...eventData,
-              time: new Date(eventData.time),
-              originalTime: eventData.originalTime ? new Date(eventData.originalTime) : null
-            }
-          })
-        }
+        await prisma.medicationEvent.createMany({
+          data: data.events.map((eventData: any) => ({
+            ...eventData,
+            time: new Date(eventData.time),
+            originalTime: eventData.originalTime ? new Date(eventData.originalTime) : null
+          }))
+        })
         // Also revert schedule endDate
         await prisma.medicationSchedule.update({
           where: { id: data.scheduleId },
