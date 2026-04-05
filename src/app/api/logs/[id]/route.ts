@@ -2,15 +2,18 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 
-export async function GET(request: Request, context: any) {
-  const params = await context.params
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getSession()
   if (!session || !session.accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const log = await prisma.administrationLog.findFirst({
       where: { 
-        id: params.id,
+        id: id,
         medication: {
           patient: {
             accountId: session.accountId as string
@@ -31,15 +34,18 @@ export async function GET(request: Request, context: any) {
   }
 }
 
-export async function PUT(request: Request, context: any) {
-  const params = await context.params
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getSession()
   if (!session || !session.accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const existing = await prisma.administrationLog.findFirst({ 
       where: { 
-        id: params.id,
+        id: id,
         medication: {
           patient: {
             accountId: session.accountId as string
@@ -55,7 +61,7 @@ export async function PUT(request: Request, context: any) {
 
     const { administeredAt, notes } = await request.json()
     const updated = await prisma.administrationLog.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         administeredAt: administeredAt ? new Date(administeredAt) : undefined,
         notes: notes !== undefined ? notes : undefined
@@ -69,15 +75,18 @@ export async function PUT(request: Request, context: any) {
   }
 }
 
-export async function DELETE(request: Request, context: any) {
-  const params = await context.params
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getSession()
   if (!session || !session.accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const existing = await prisma.administrationLog.findFirst({ 
       where: { 
-        id: params.id,
+        id: id,
         medication: {
           patient: {
             accountId: session.accountId as string
@@ -91,7 +100,7 @@ export async function DELETE(request: Request, context: any) {
       return NextResponse.json({ error: 'Forbidden. You can only delete your own logs.' }, { status: 403 })
     }
 
-    await prisma.administrationLog.delete({ where: { id: params.id } })
+    await prisma.administrationLog.delete({ where: { id: id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting log', error)
